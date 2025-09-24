@@ -4,10 +4,12 @@ import {
   deleteSchedule,
   getSchedules,
 } from '../services/SchedulePostService'
+import { CronService } from '../services/CronService'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   try {
+    await CronService.scheduleNextPosts() // Ensure cron job is running to handle schedules
     const { searchParams } = new URL(request.url)
     const scheduleId = searchParams.get('id')
 
@@ -50,6 +52,8 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { id, ...updateData } = body
     const schedule = await updateSchedule(id, updateData)
+    CronService.unscheduleAll()
+    await CronService.scheduleNextPosts() // Reschedule cron jobs after update
     return NextResponse.json(schedule)
   } catch (error) {
     return NextResponse.json(

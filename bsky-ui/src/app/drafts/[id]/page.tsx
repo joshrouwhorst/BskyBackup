@@ -1,4 +1,4 @@
-import DraftsProvider from '@/providers/DraftsProvider'
+import React from 'react'
 import { CreateDraftForm } from '@/components/CreateDraftForm'
 
 export default async function UpdateDraft({
@@ -8,8 +8,8 @@ export default async function UpdateDraft({
 }) {
   const { id } = await params
   return (
-    <div className="max-w-2xl mx-auto my-8">
-      <CreateDraftForm redirect="/drafts" draftId={id} />
-    </div>
+      <div className="max-w-2xl mx-auto my-8">
+        <CreateDraftForm redirect="/drafts" draftId={id} />
+      </div>
   )
 }

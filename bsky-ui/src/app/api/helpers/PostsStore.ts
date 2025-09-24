@@ -10,6 +10,7 @@ import type {
 } from '@/types/drafts'
 import sharp from 'sharp'
 import { DRAFT_MEDIA_ENDPOINT, PUBLISHED_POSTS_PATH } from '@/config'
+import Logger from './logger'
 
 const META_FILENAME = 'meta.json'
 const TEXT_FILENAME = 'post.txt'
@@ -125,13 +126,14 @@ export class PostsStore {
       images: images || [],
       video: video || null,
       extra: input.extra ?? {},
-      priority: 0,
+      priority: -1,
     }
 
     await this.writeMeta(postDir, meta)
 
     // Return post with text loaded from file
     const postText = await this.readText(postDir)
+    Logger.log(`Created draft post ${id} in ${input.group || 'no group'}.`)
     return {
       dir: postDir,
       meta: { ...meta, text: postText },
@@ -140,6 +142,7 @@ export class PostsStore {
   }
 
   async updatePost(id: string, input: CreateDraftInput): Promise<DraftPost> {
+    Logger.log(`Updating draft post ${id}.`)
     const posts = await this.listPosts()
     const post = posts.find((p) => p.meta.id === id)
     if (!post) throw new Error('Post not found')
@@ -369,10 +372,54 @@ export class PostsStore {
   }
 
   async deletePost(post: DraftPost): Promise<void> {
+    Logger.log(`Deleting draft post ${post.meta.id}.`)
     await fs.rm(post.dir, { recursive: true, force: true })
+  }
+  
+  async duplicatePost(post: DraftPost): Promise<DraftPost> {
+    Logger.log(`Duplicating draft post ${post.meta.id}.`)
+    const rand = genId()
+    const createdAt = new Date().toISOString()
+    const newId = `${createdAt.replace(/[:.]/g, '-')}_${rand}`
+    const newDirItems = post.group
+      ? [this.root, post.group, newId]
+      : [this.root, newId]
+    const newDir = path.join(...newDirItems)
+    await ensureDir(newDir)
+
+    // Copy all files and subdirectories from old dir to new dir
+    async function copyRecursive(src: string, dest: string) {
+      await ensureDir(dest)
+      const entries = await fs.readdir(src, { withFileTypes: true })
+      for (const entry of entries) {
+        const srcPath = path.join(src, entry.name)
+        const destPath = path.join(dest, entry.name)
+        if (entry.isDirectory()) {
+          await copyRecursive(srcPath, destPath)
+        } else {
+          await fs.copyFile(srcPath, destPath)
+        }
+      }
+    }
+    await copyRecursive(post.dir, newDir)
+
+    // Update meta.json with new id and createdAt
+    const metaPath = path.join(newDir, META_FILENAME)
+    const metaRaw = await fs.readFile(metaPath, 'utf8')
+    const meta = JSON.parse(metaRaw)
+    meta.id = newId
+    meta.createdAt = createdAt
+    await fs.writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf8')
+
+    // Load duplicated post
+    const duplicated = await this.readPostDir(newId, post.group)
+    if (!duplicated) throw new Error('Failed to duplicate post')
+    duplicated.group = post.group
+    return duplicated
   }
 
   async movePostToGroup(post: DraftPost, newGroup: string): Promise<DraftPost> {
+    Logger.log(`Moving draft post ${post.meta.id} to group ${newGroup}.`)
     const groupDir = path.join(this.root, newGroup)
     await ensureDir(groupDir)
 
@@ -385,7 +432,37 @@ export class PostsStore {
     return post
   }
 
+  async getGroupOrder(group: string): Promise<string[]> {
+    try {
+      const posts = await this.listPostsInGroup(group)
+      posts.sort((a, b) => (a.meta.priority < b.meta.priority ? 1 : -1));
+      for (let i = 0; i < posts.length; i++) {
+        posts[i].meta.priority = i;
+        const metaPath = path.join(posts[i].dir, META_FILENAME);
+        await fs.writeFile(metaPath, JSON.stringify(posts[i].meta, null, 2), 'utf8');
+      }
+      const order = posts.sort((a, b) => (a.meta.priority < b.meta.priority ? 1 : -1)).map(p => p.meta.id);
+      return order;
+    } catch (err) {
+      return []
+    }
+  }
+
+  async setGroupOrder(group: string, order: string[]): Promise<void> {
+    const posts = await this.listPostsInGroup(group)
+    const postMap = new Map(posts.map(p => [p.meta.id, p]))
+    for (let i = 0; i < order.length; i++) {
+      const post = postMap.get(order[i])
+      if (post) {
+        post.meta.priority = i
+        const metaPath = path.join(post.dir, META_FILENAME)
+        await fs.writeFile(metaPath, JSON.stringify(post.meta, null, 2), 'utf8')
+      }
+    }
+  }
+
   async removePostFromGroup(post: DraftPost): Promise<DraftPost> {
+    Logger.log(`Removing draft post ${post.meta.id} from ${post.group}.`)
     const baseName = path.basename(post.dir)
     const newDir = path.join(this.root, baseName)
 
@@ -396,6 +473,7 @@ export class PostsStore {
   }
 
   async movePost(post: DraftPost, newPath: string): Promise<DraftPost> {
+    Logger.log(`Moving draft post ${post.meta.id} to ${newPath}.`)
     await ensureDir(path.dirname(newPath))
     await fs.rename(post.dir, newPath)
     post.dir = newPath
@@ -403,6 +481,7 @@ export class PostsStore {
   }
 
   async moveGroup(groupPath: string, newPath: string): Promise<void> {
+    Logger.log(`Moving group ${groupPath} to ${newPath}.`)
     const fullOldPath = path.join(this.root, groupPath)
     const fullNewPath = path.join(this.root, newPath)
     await ensureDir(path.dirname(fullNewPath))
@@ -410,6 +489,8 @@ export class PostsStore {
   }
 
   async movePostToPublished(post: DraftPost): Promise<DraftPost> {
+    Logger.log(`Publishing draft post ${post.meta.id}.`)
+    await ensureDir(PUBLISHED_POSTS_PATH)
     const newDir = path.join(
       PUBLISHED_POSTS_PATH,
       ...(post.group ? [post.group] : []),

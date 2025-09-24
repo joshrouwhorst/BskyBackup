@@ -24,24 +24,3 @@ export async function POST(
   }
 }
 
-// Reorder posts in a schedule
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const resolvedParams = await params
-    const body = await request.json()
-
-    await reorderSchedulePosts(resolvedParams.id, body.draftPostIds)
-
-    return NextResponse.json({
-      message: 'Post priorities updated successfully',
-    })
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to update post priorities' },
-      { status: 500 }
-    )
-  }
-}

@@ -12,6 +12,8 @@ import {
   Edit,
   Trash,
   Folder,
+  CopyPlus,
+  CloudUpload
 } from 'lucide-react'
 import { PostDisplayData } from '@/types/types'
 import PostMediaCarousel from './PostMediaCarousel'
@@ -94,7 +96,7 @@ function getDisplayDataFromDraft(draftPost: DraftPost): PostDisplayData {
 }
 
 export default function Post({ postData, draftPost, displayData }: PostProps) {
-  const { deleteDraft } = useDraftContext()
+  const { deleteDraft, duplicateDraft, refresh, publishDraft } = useDraftContext()
   // Handle conversions
   if (!displayData && postData) {
     displayData = getDisplayDataFromPostData(postData)
@@ -171,6 +173,14 @@ export default function Post({ postData, draftPost, displayData }: PostProps) {
       confirm('Are you sure you want to delete this draft?')
     ) {
       await deleteDraft(post.draftId)
+      await refresh()
+    }
+  }
+
+  const handleDuplicateDraft = async (post: PostDisplayData) => {
+    if (post.draftId) {
+      const newPost = await duplicateDraft(post.draftId)
+      if (newPost) window.location.href = `/drafts/${newPost.meta.id}`
     }
   }
 
@@ -197,6 +207,42 @@ export default function Post({ postData, draftPost, displayData }: PostProps) {
           {item.draftId ? (
             <Button
               variant="icon"
+              color="tertiary"
+              onClick={async () => {
+                if (confirm('Are you sure you want to publish this draft?')) {
+                  await publishDraft(item.draftId!)
+                  await refresh()
+                }
+              }}
+              title="Publish post"
+            >
+              <CloudUpload className="w-4 h-4" />
+            </Button>
+          ) : null}
+          {item.draftId ? (
+            <Button
+              variant="icon"
+              color="secondary"
+              onClick={() => handleDuplicateDraft(item)}
+            >
+              <CopyPlus className="w-4 h-4" />
+            </Button>
+          ) : null}
+          
+          {item.draftId ? (
+            <LinkButton
+              variant="icon"
+              color="primary"
+              href={getEditLink(item.draftId)}
+              title="Edit post"
+            >
+              <Edit className="w-4 h-4" />
+            </LinkButton>
+          ) : null}
+
+          {item.draftId ? (
+            <Button
+              variant="icon"
               color="danger"
               onClick={() => handleDeleteDraft(item)}
               title="Delete post"
@@ -204,22 +250,16 @@ export default function Post({ postData, draftPost, displayData }: PostProps) {
               <Trash className="w-4 h-4" />
             </Button>
           ) : null}
-          {item.draftId ? (
-            <LinkButton
-              variant="icon"
-              href={getEditLink(item.draftId)}
-              title="Edit post"
-            >
-              <Edit className="w-4 h-4" />
-            </LinkButton>
-          ) : null}
+          
           <Button
             variant="icon"
+            color="secondary"
             onClick={copyToClipboard}
             title="Copy JSON to clipboard"
           >
             <Copy className="w-4 h-4" />
           </Button>
+          
           <span className="text-gray-500 text-sm">
             {new Date(item.indexedAt).toLocaleDateString()}
           </span>
@@ -245,13 +285,15 @@ export default function Post({ postData, draftPost, displayData }: PostProps) {
         </div>
         <div className="flex flex-1 justify-end">
           {item.group && (
-            <span
+            <LinkButton
+              href={`/groups/${item.group}`}
+              variant="icon"
               className="flex items-center gap-1  text-sm text-gray-500 mr-4"
               title={`Posted in group ${item.group}`}
             >
               <Folder className="w-4 h-4 text-blue-500" />
               <span>{item.group}</span>
-            </span>
+            </LinkButton>
           )}
         </div>
       </div>

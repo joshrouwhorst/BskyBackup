@@ -2,6 +2,7 @@ import { APP_DATA_FILE } from '@/config'
 import fs from 'fs'
 
 import { AppData } from '@/types/types'
+import Logger from './logger'
 
 export async function getAppData(): Promise<AppData> {
   if (!fs.existsSync(APP_DATA_FILE)) {
@@ -12,5 +13,6 @@ export async function getAppData(): Promise<AppData> {
 }
 
 export async function saveAppData(data: AppData): Promise<void> {
+  Logger.log('Saving app data.')
   await fs.promises.writeFile(APP_DATA_FILE, JSON.stringify(data))
 }

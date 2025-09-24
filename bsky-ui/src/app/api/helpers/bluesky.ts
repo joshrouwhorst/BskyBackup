@@ -3,6 +3,7 @@ import { FeedViewPost } from '@/types/bsky'
 import { BSKY_IDENTIFIER, BSKY_PASSWORD, DRAFT_POSTS_PATH } from '@/config'
 import { DraftPost } from '@/types/drafts'
 import fs from 'fs/promises'
+import { Main } from '@atproto/api/dist/client/types/app/bsky/richtext/facet'
 
 export interface PostFilters {
   cutoffDate?: Date
@@ -291,10 +292,13 @@ export async function addPost(post: DraftPost) {
       }
     }
 
+    const facets = post.meta.text ? getFacetsFromText(post.meta.text) : []
+
     await agent.post({
       text: post.meta.text,
-      createdAt: new Date(post.meta.createdAt).toISOString(),
+      createdAt: (new Date()).toISOString(),
       langs: ['en'],
+      facets,
       embed:
         uploadedImages.length > 0
           ? {
@@ -322,4 +326,53 @@ export async function addPost(post: DraftPost) {
       console.warn('Error during logout:', logoutError)
     }
   }
+}
+
+function getFacetsFromText(text: string): Main[] {
+  const facets: Main[] = []
+  const mentionRegex = /@([a-zA-Z0-9_\.]+)/g
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+  const tagRegex = /#(\w+)/g
+  
+  let match: RegExpExecArray | null
+  while ((match = mentionRegex.exec(text)) !== null) {
+    const start = match.index
+    const end = start + match[0].length
+    facets.push({
+      $type: 'app.bsky.richtext.facet',
+      index: { byteStart: start, byteEnd: end },
+      features: [{
+        $type: 'app.bsky.richtext.facet#mention',
+        did: 'did:example:' + match[1] // Placeholder DID, replace with actual lookup if available
+      }]
+    })
+  }
+  
+  while ((match = urlRegex.exec(text)) !== null) {
+    const start = match.index
+    const end = start + match[0].length
+    facets.push({
+      $type: 'app.bsky.richtext.facet',
+      index: { byteStart: start, byteEnd: end },
+      features: [{
+        $type: 'app.bsky.richtext.facet#link',
+        uri: match[0]
+      }]
+    })
+  }
+  
+  while ((match = tagRegex.exec(text)) !== null) {
+    const start = match.index
+    const end = start + match[0].length
+    facets.push({
+      $type: 'app.bsky.richtext.facet',
+      index: { byteStart: start, byteEnd: end },
+      features: [{
+        $type: 'app.bsky.richtext.facet#tag',
+        tag: match[1]
+      }]
+    })
+  }
+
+  return facets
 }

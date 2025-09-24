@@ -11,49 +11,58 @@ import Logger from '@/app/api/helpers/logger'
 import { formatDate } from '@/helpers/utils'
 import { getAppData, saveAppData } from '../helpers/appData'
 
+init()
+function init() {
+  Logger.log('BackupService initialized.')
+}
+
 export async function getBackup(): Promise<PostData[]> {
   const posts = await openBackup()
   return posts.map(transformFeedViewPostToPostData)
 }
 
 export async function runBackup() {
-  const logger = new Logger()
-  logger.log('Starting the backup process.')
+  Logger.opening('Backup Process')
+  Logger.log('Getting appData.')
   const appData = await getAppData()
+  const lastBackup = appData?.lastBackup ? new Date(appData.lastBackup) : null
+  const minimumNextBackup =
+    Date.now() - MINIMUM_MINUTES_BETWEEN_BACKUPS * 60 * 1000
 
   // Make sure we respect minimum time between backups
   if (
-    appData &&
-    appData.lastBackup &&
-    !isNaN(new Date(appData.lastBackup).getTime()) &&
-    new Date(appData.lastBackup).getTime() <
-      Date.now() - MINIMUM_MINUTES_BETWEEN_BACKUPS * 60 * 1000
+    lastBackup &&
+    !isNaN(lastBackup.getTime()) &&
+    lastBackup.getTime() > minimumNextBackup
   ) {
-    logger.log(
+    Logger.log(
       `Last backup at ${formatDate(
-        appData.lastBackup
-      )} was too recent. Skipping backup.`
+        lastBackup
+      )} was less than ${MINIMUM_MINUTES_BETWEEN_BACKUPS} minutes ago. Skipping backup.`
     )
-  } else if (appData && appData.lastBackup) {
-    logger.log(`Last backup was on ${formatDate(appData.lastBackup)}.`)
+    Logger.closing('Backup Process')
+    return []
+  } else if (lastBackup) {
+    Logger.log(`Last backup was on ${formatDate(lastBackup)}.`)
   } else {
-    logger.log('No previous backup found.')
+    Logger.log('No previous backup found.')
   }
 
   // Load existing backup posts
 
   const backupPosts = await openBackup()
 
-  logger.log(`There are ${backupPosts.length} existing posts in backup.`)
+  Logger.log(`There are ${backupPosts.length} existing posts in backup.`)
 
   // Get all posts from Bluesky
   const newPosts = await getPosts()
   if (newPosts.length === 0) {
-    logger.log('We received no posts from Bluesky.')
+    Logger.log('We received no posts from Bluesky.')
+    Logger.closing('Backup Process')
     return
   }
 
-  logger.log(`There are ${newPosts.length} posts from Bluesky.`)
+  Logger.log(`There are ${newPosts.length} posts from Bluesky.`)
 
   // Update existing posts with new ones, avoiding duplicates
   const existingPostsMap = new Map(
@@ -65,7 +74,7 @@ export async function runBackup() {
     newMediaCount += await backupMediaFiles(post)
   })
 
-  logger.log(`There are ${newMediaCount} new media files backed up.`)
+  Logger.log(`There are ${newMediaCount} new media files backed up.`)
 
   // Add new posts, replacing existing ones with same CID
   newPosts.forEach((newPost) => {
@@ -74,9 +83,7 @@ export async function runBackup() {
 
   const combinedPosts = Array.from(existingPostsMap.values())
   await saveBackup(combinedPosts)
-  logger.log(
-    `Backup complete. There are now ${combinedPosts.length} total posts in backup.`
-  )
+
   appData.lastBackup = new Date().toISOString()
   appData.postsOnBsky = newPosts.length
   appData.totalPostsBackedUp = combinedPosts.length
@@ -92,17 +99,21 @@ export async function runBackup() {
   }
 
   await saveAppData(appData)
-  await logger.save()
+  Logger.log(
+    `Backup complete. There are now ${combinedPosts.length} total posts in backup.`
+  )
+  Logger.closing('Backup Process')
   return combinedPosts.map(transformFeedViewPostToPostData)
 }
 
 export async function prunePosts(): Promise<void> {
-  const logger = new Logger()
-  logger.log('Starting the prune process.')
+  Logger.opening('Prune Process')
 
   const cutoffDate = new Date()
   cutoffDate.setMonth(cutoffDate.getMonth() - DEFAULT_PRUNE_MONTHS)
   if (isNaN(cutoffDate.getTime())) {
+    Logger.log('Invalid cutoff date calculated.')
+    Logger.closing('Prune Process')
     throw new Error('Cutoff date is required')
   }
 
@@ -111,20 +122,23 @@ export async function prunePosts(): Promise<void> {
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
 
   if (cutoffDate > threeMonthsAgo) {
+    Logger.log(
+      `Cutoff date ${formatDate(cutoffDate)} is more recent than 3 months ago.`
+    )
+    Logger.closing('Prune Process')
     throw new Error(`Cutoff date cannot be more recent than 3 months ago`)
   }
 
-  logger.log(`Running backup before pruning.`)
+  Logger.log(`Running backup before pruning.`)
   await runBackup() // Ensure we have the latest posts before pruning
 
-  logger.log(`Pruning posts older than ${formatDate(cutoffDate)}.`)
+  Logger.log(`Pruning posts older than ${formatDate(cutoffDate)}.`)
   await deletePosts({ cutoffDate })
 
-  logger.log(`Prune process complete.`)
+  Logger.log(`Prune process complete.`)
   const currentPosts = await getPosts()
 
-  logger.log(`There are now ${currentPosts.length} total posts in on Bluesky.`)
-  await logger.save()
-
+  Logger.log(`There are now ${currentPosts.length} total posts in on Bluesky.`)
+  Logger.closing('Prune Process')
   return
 }

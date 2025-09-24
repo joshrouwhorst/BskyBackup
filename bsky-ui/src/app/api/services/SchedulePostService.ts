@@ -4,19 +4,22 @@ import {
   CreateScheduleRequest,
 } from '@/types/scheduler'
 import { getAppData, saveAppData } from '@/app/api/helpers/appData'
-import { ScheduledTask, schedule as cronSchedule } from 'node-cron'
 import {
   getDraftPosts,
   getDraftPostsInGroup,
-  sendToSocialPlatform,
+  publishDraftPost,
 } from './DraftPostService'
 import { DraftPost } from '@/types/drafts'
+import Logger from '../helpers/logger'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 interface ScheduleData {
   schedules: Schedule[]
 }
-
-const activeJobs: Map<string, ScheduledTask> = new Map()
 
 export async function getSchedules(): Promise<Schedule[]> {
   const appData = await getAppData()
@@ -24,6 +27,7 @@ export async function getSchedules(): Promise<Schedule[]> {
 }
 
 async function updateScheduleData(data: Partial<ScheduleData>): Promise<void> {
+  Logger.log(`Updating schedules.`, data)
   const appData = await getAppData()
   const updatedData = {
     ...appData,
@@ -45,16 +49,11 @@ export async function createSchedule(
     isActive: request.isActive ?? true,
     createdAt: new Date().toISOString(),
     platforms: request.platforms,
-    nextTrigger: calculateNextTrigger(request.frequency),
     group: request.group || 'default', // <-- Add this line
   }
 
   const updatedSchedules = [...schedules, schedule]
   await updateScheduleData({ schedules: updatedSchedules })
-
-  if (schedule.isActive) {
-    startScheduleJob(schedule)
-  }
 
   return schedule
 }
@@ -63,6 +62,7 @@ export async function updateSchedule(
   scheduleId: string,
   updates: Partial<Schedule>
 ): Promise<Schedule> {
+  Logger.log(`Updating schedule ${scheduleId}`, updates)
   const schedules = await getSchedules()
   const scheduleIndex = schedules.findIndex((s) => s.id === scheduleId)
 
@@ -71,25 +71,15 @@ export async function updateSchedule(
   }
 
   const updatedSchedule = { ...schedules[scheduleIndex], ...updates }
-  if (updates.frequency) {
-    updatedSchedule.nextTrigger = calculateNextTrigger(updates.frequency)
-  }
 
   schedules[scheduleIndex] = updatedSchedule
   await updateScheduleData({ schedules })
-
-  // Restart job if frequency or active status changed
-  if (updates.frequency || updates.isActive !== undefined) {
-    stopScheduleJob(scheduleId)
-    if (updatedSchedule.isActive) {
-      startScheduleJob(updatedSchedule)
-    }
-  }
 
   return updatedSchedule
 }
 
 export async function deleteSchedule(scheduleId: string): Promise<void> {
+  Logger.log(`Deleting schedule ${scheduleId}.`)
   const schedules = await getSchedules()
 
   const updatedSchedules = schedules.filter((s) => s.id !== scheduleId)
@@ -97,14 +87,13 @@ export async function deleteSchedule(scheduleId: string): Promise<void> {
   await updateScheduleData({
     schedules: updatedSchedules,
   })
-
-  stopScheduleJob(scheduleId)
 }
 
 export async function reorderSchedulePosts(
   scheduleId: string,
   newOrder: string[]
 ): Promise<void> {
+  Logger.log(`Reordering posts for schedule ${scheduleId}.`, { newOrder })
   const schedule = (await getSchedules()).find((s) => s.id === scheduleId)
   if (!schedule) {
     throw new Error(`Schedule ${scheduleId} not found`)
@@ -149,170 +138,189 @@ async function getNextPost(scheduleId: string): Promise<DraftPost | null> {
   // Get all scheduled posts for this schedule's group
   const scheduledPosts = await getDraftPostsInGroup(schedule.group)
 
+  const newPosts = scheduledPosts.filter((p) => p.meta.priority === -1)
+  newPosts.sort((a, b) => {
+    const aDate = new Date(a.meta.createdAt).getTime()
+    const bDate = new Date(b.meta.createdAt).getTime()
+    return aDate - bDate
+  })
+
+  // Assign priority to new posts, adding them to the end of the list
+  newPosts.forEach((p, idx) => {
+    p.meta.priority = scheduledPosts.length - newPosts.length + idx + 1
+  })
+
   // Sort by DraftPost.priority (lower number = higher priority)
   scheduledPosts.sort((a, b) => a.meta.priority - b.meta.priority)
 
   return scheduledPosts[0] || null
 }
 
-export async function triggerSchedule(scheduleId: string): Promise<void> {
+export async function publishNextPost(scheduleId: string): Promise<void> {
+  Logger.opening('Publish Next Post Process')
+
   const schedules = await getSchedules()
   const schedule = schedules.find((s) => s.id === scheduleId)
 
-  if (!schedule || !schedule.isActive) return
+  if (schedule) {
+    // Update schedule last triggered
+    schedule.lastTriggered = new Date().toISOString()
+    schedule.nextTrigger = getNextTriggerTime(
+      new Date(schedule.lastTriggered),
+      schedule.frequency
+    ).toISOString()
+  }
 
-  const nextPost = await getNextPost(scheduleId)
-  if (!nextPost) {
-    console.log(`No pending posts for schedule ${schedule.name}`)
+  const post = await getNextPost(scheduleId)
+
+  if (!post) {
+    await updateScheduleData({ schedules })
+    Logger.log(`No post found to publish for schedule ID: ${scheduleId}`)
+    Logger.closing('Publish Next Post Process')
     return
   }
 
-  console.log(
-    `Triggering schedule ${
-      schedule.name
-    }, posting: ${nextPost.meta.text?.substring(0, 50)}...`
-  )
+  if (!schedule || !schedule.isActive) return
+  Logger.log(`Schedule ${scheduleId} found: ${schedule.name}`)
+
+  const nextPost = await getNextPost(scheduleId)
+  if (!nextPost) {
+    Logger.log(`No pending posts for schedule ${schedule.name}`)
+    Logger.closing('Publish Next Post Process')
+    return
+  }
+
+  Logger.log(`Next post for schedule ${schedule.name} is ${nextPost.meta.id}.`)
 
   // Just send to bluesky if no platforms specified
   if (!schedule.platforms || schedule.platforms.length === 0) {
     schedule.platforms = ['bluesky']
   }
 
-  // Send to each platform
-  for (const platform of schedule.platforms) {
-    try {
-      console.log(`Posting to ${platform} for schedule ${schedule.name}`)
-      await sendToSocialPlatform(nextPost, platform)
-    } catch (error) {
-      console.error(
-        `Failed to post to ${platform} for schedule ${schedule.name}:`,
-        error
+  try {
+    Logger.log(`Posting ${nextPost.meta.id} for schedule ${schedule.name}`)
+    await publishDraftPost(nextPost.meta.id, schedule.platforms)
+  } catch (error) {
+    Logger.error(
+      `Failed to publish ${nextPost.meta.id} for schedule ${schedule.name}:`,
+      error
+    )
+  }
+
+  Logger.log(`Successfully posted draft ${nextPost.meta.id}`)
+  await updateScheduleData({ schedules })
+  Logger.closing('Publish Next Post Process')
+  return
+}
+
+export function getNextDatetime(
+  start: Date,
+  every: number,
+  unit: 'minutes' | 'hours' | 'days' | 'weeks' | 'months' | 'years',
+  timeOfDay?: string,
+  timeZone?: string,
+  dayOfWeek?: number,
+  dayOfMonth?: number
+): Date {
+  // Calculate the next datetime based on the given parameters
+  let result = dayjs(start)
+
+  if (unit === 'minutes') {
+    result = result.add(every, 'minute')
+  } else if (unit === 'hours') {
+    result = result.add(every, 'hour')
+  } else if (unit === 'days') {
+    result = result.add(every - 1, 'day')
+    if (timeOfDay) {
+      const [h, m] = timeOfDay.split(':').map(Number)
+      result = result.hour(h).minute(m).second(0).millisecond(0)
+    }
+    if (result.isBefore(dayjs(start)) || result.isSame(dayjs(start))) {
+      result = result.add(1, 'day')
+    }
+  } else if (unit === 'weeks') {
+    result = result.add((every - 1) * 7, 'day')
+    if (typeof dayOfWeek === 'number') {
+      // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      let daysToAdd = (dayOfWeek - result.day() + 7) % 7
+      if (
+        daysToAdd === 0 &&
+        (result.isBefore(dayjs(start)) || result.isSame(dayjs(start)))
       )
+        daysToAdd = 7
+      result = result.add(daysToAdd, 'day')
+    }
+    if (timeOfDay) {
+      const [h, m] = timeOfDay.split(':').map(Number)
+      result = result.hour(h).minute(m).second(0).millisecond(0)
+    }
+    if (result.isBefore(dayjs(start)) || result.isSame(dayjs(start))) {
+      result = result.add(7, 'day')
+    }
+  } else if (unit === 'months') {
+    result = result.add(every - 1, 'month')
+    if (typeof dayOfMonth === 'number') {
+      const daysInMonth = result.daysInMonth()
+      result = result.date(Math.min(dayOfMonth, daysInMonth))
+    }
+    if (timeOfDay) {
+      const [h, m] = timeOfDay.split(':').map(Number)
+      result = result.hour(h).minute(m).second(0).millisecond(0)
+    }
+    if (result.isBefore(dayjs(start)) || result.isSame(dayjs(start))) {
+      result = result.add(1, 'month')
+    }
+  } else {
+    result = result.add(every - 1, 'year')
+    if (typeof dayOfMonth === 'number') {
+      const daysInMonth = result.daysInMonth()
+      result = result.date(Math.min(dayOfMonth, daysInMonth))
+    }
+    if (timeOfDay) {
+      const [h, m] = timeOfDay.split(':').map(Number)
+      result = result.hour(h).minute(m).second(0).millisecond(0)
+    }
+    if (result.isBefore(dayjs(start)) || result.isSame(dayjs(start))) {
+      result = result.add(1, 'year')
     }
   }
 
-  console.log(`Successfully posted draft ${nextPost.meta.id}`)
-
-  // Update schedule last triggered
-  schedule.lastTriggered = new Date().toISOString()
-  schedule.nextTrigger = calculateNextTrigger(schedule.frequency)
-
-  const updatedSchedules = schedules.map((s) =>
-    s.id === scheduleId ? schedule : s
-  )
-  await updateScheduleData({ schedules: updatedSchedules })
-}
-
-function calculateNextTrigger(frequency: ScheduleFrequency): string {
-  const now = new Date()
-  const { interval, timeOfDay, dayOfWeek, dayOfMonth, timeZone } = frequency
-
-  let next = new Date(now)
-
-  switch (interval.unit) {
-    case 'minutes':
-      next.setMinutes(next.getMinutes() + interval.every)
-      break
-    case 'hours':
-      next.setHours(next.getHours() + interval.every)
-      break
-    case 'days':
-      next.setDate(next.getDate() + interval.every)
-      if (timeOfDay) {
-        const [hours, minutes] = timeOfDay.split(':').map(Number)
-        next.setHours(hours, minutes, 0, 0)
-        if (next <= now) {
-          next.setDate(next.getDate() + interval.every)
-        }
-      }
-      break
-    case 'weeks':
-      if (dayOfWeek !== undefined) {
-        const daysUntilTarget = (dayOfWeek - next.getDay() + 7) % 7
-        next.setDate(next.getDate() + daysUntilTarget)
-        if (timeOfDay) {
-          const [hours, minutes] = timeOfDay.split(':').map(Number)
-          next.setHours(hours, minutes, 0, 0)
-        }
-        if (next <= now) {
-          next.setDate(next.getDate() + 7 * interval.every)
-        }
-      }
-      break
+  // If a timeZone is specified, convert the intended local time to the correct UTC time
+  if (timeZone && timeOfDay) {
+    result = dayjs(
+      timezoneOffset(result.format('YYYY-MM-DD'), timeOfDay, timeZone)
+    )
   }
 
-  return next.toISOString()
+  return result.toDate()
 }
 
-function cronFromFrequency(frequency: ScheduleFrequency): string {
-  const { interval, timeOfDay, dayOfWeek, dayOfMonth } = frequency
-
-  const [hours, minutes] = timeOfDay ? timeOfDay.split(':').map(Number) : [0, 0]
-
-  switch (interval.unit) {
-    case 'minutes':
-      return `*/${interval.every} * * * *`
-    case 'hours':
-      return `${minutes} */${interval.every} * * *`
-    case 'days':
-      return `${minutes} ${hours} */${interval.every} * *`
-    case 'weeks':
-      const day = dayOfWeek ?? 0
-      return `${minutes} ${hours} * * ${day}`
-    case 'months':
-      const monthDay = dayOfMonth ?? 1
-      return `${minutes} ${hours} ${monthDay} * *`
-    default:
-      return `${minutes} ${hours} * * *` // Default to daily
-  }
+export function timezoneOffset(
+  date: string,
+  time: string,
+  timeZone: string
+): string {
+  const d = dayjs.tz(`${date} ${time}`, timeZone)
+  return d.toISOString()
 }
 
-function startScheduleJob(schedule: Schedule): void {
-  if (!schedule.id) return
+export function getNextTriggerTime(
+  lastRun: Date | null,
+  frequency: ScheduleFrequency
+): Date {
+  if (!lastRun) lastRun = new Date()
+  const { interval, timeOfDay, timeZone, dayOfWeek, dayOfMonth } = frequency
+  const { every, unit } = interval
 
-  if (activeJobs.has(schedule.id)) {
-    stopScheduleJob(schedule.id)
-  }
-
-  const cronExpression = cronFromFrequency(schedule.frequency)
-  const task = cronSchedule(
-    cronExpression,
-    () => {
-      triggerSchedule(schedule.id!)
-    },
-    {
-      name: schedule.name,
-      timezone: schedule.frequency.timeZone || 'UTC',
-    }
+  let run = getNextDatetime(
+    lastRun,
+    every,
+    unit,
+    timeOfDay,
+    timeZone,
+    dayOfWeek,
+    dayOfMonth
   )
 
-  task.start()
-  activeJobs.set(schedule.id, task)
-  console.log(
-    `Started schedule job for ${schedule.name} with cron: ${cronExpression}`
-  )
-}
-
-export function stopScheduleJob(scheduleId: string): void {
-  console.log(`Stopping schedule job for ID: ${scheduleId}`)
-  const job = activeJobs.get(scheduleId)
-  if (job) {
-    job.stop()
-    activeJobs.delete(scheduleId)
-  }
-}
-
-export async function startAllActiveSchedules(): Promise<void> {
-  const schedules = await getSchedules()
-  for (const schedule of schedules) {
-    if (schedule.isActive) {
-      startScheduleJob(schedule)
-    }
-  }
-}
-
-export async function stopAllSchedules(): Promise<void> {
-  for (const [scheduleId] of activeJobs) {
-    stopScheduleJob(scheduleId)
-  }
+  return run
 }

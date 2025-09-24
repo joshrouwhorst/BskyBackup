@@ -3,59 +3,77 @@ import path from 'path'
 import { LOGS_PATH } from '@/config'
 import { formatDate } from '@/helpers/utils'
 
+const SHOW_OBJECTS_IN_LOGS = false // Set to false to disable logging objects
+
+function getLogFilePath(): string {
+  const today = new Date()
+  const dateStr = today.toISOString().split('T')[0] // e.g., "2024-06-09"
+  const filename = `backup-log-${dateStr}.txt`
+  const resolvedPath = path.resolve(LOGS_PATH, filename)
+  const dir = path.dirname(resolvedPath)
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true })
+  }
+  return resolvedPath
+}
+
 class Logger {
-  private lines: { message: string; timestamp: Date }[] = []
-
-  blank() {
-    this.lines.push({ message: '', timestamp: new Date() })
+  private static appendLine(message: string) {
+    const line = `${formatDate(new Date())} | ${message}\n`
+    fs.appendFileSync(getLogFilePath(), line, 'utf-8')
+    console.log(line.trim())
   }
 
-  blanks(count: number) {
+  static blank() {
+    Logger.appendLine('')
+  }
+
+  static blanks(count: number) {
     for (let i = 0; i < count; i++) {
-      this.blank()
+      Logger.blank()
     }
   }
 
-  divider() {
-    this.lines.push({
-      message: '----------------------------------------',
-      timestamp: new Date(),
-    })
+  static divider() {
+    Logger.appendLine('----------------------------------------')
   }
 
-  log(message: string) {
-    console.log(message)
-    this.lines.push({ message, timestamp: new Date() })
+  static opening(name: string) {
+    Logger.blanks(2)
+    Logger.appendLine(`********** START ${name} **********`)
   }
 
-  error(message: string) {
-    console.error(message)
-    this.lines.push({
-      message: `ERROR: ${message}`,
-      timestamp: new Date(),
-    })
+  static closing(name: string) {
+    Logger.appendLine(`********** END ${name} **********`)
+    Logger.blanks(2)
   }
 
-  async save() {
-    const filename = `backup-log-${new Date()
-      .toISOString()
-      .replace(/[:.]/g, '-')}.txt`
-    const resolvedPath = path.resolve(LOGS_PATH, filename)
-    const dir = path.dirname(resolvedPath)
-
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
+  static log(message: string, object?: any) {
+    Logger.appendLine(message)
+    if (object && SHOW_OBJECTS_IN_LOGS) {
+      Logger.appendLine(JSON.stringify(object, getCircularReplacer(), 2))
     }
-
-    fs.writeFileSync(
-      resolvedPath,
-      this.lines
-        .map((line) => `${formatDate(line.timestamp)} | ${line.message}`)
-        .join('\n'),
-      'utf-8'
-    )
-    console.log(`Log saved to ${resolvedPath}`)
   }
+
+  static error(message: string, error?: any) {
+    Logger.appendLine(`ERROR: ${message}`)
+    if (error && SHOW_OBJECTS_IN_LOGS) {
+      Logger.appendLine(`ERROR DETAILS: ${JSON.stringify(error, getCircularReplacer(), 2)}`)
+    }
+  }
+}
+
+function getCircularReplacer() {
+  const seen = new WeakSet();
+  return function (key: string, value: any) {
+    if (typeof value === "object" && value !== null) {
+      if (seen.has(value)) {
+        return "[Circular]";
+      }
+      seen.add(value);
+    }
+    return value;
+  };
 }
 
 export default Logger

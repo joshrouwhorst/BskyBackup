@@ -29,8 +29,10 @@ interface DraftsContextType {
   updateDraft: (
     id: string,
     input: Partial<CreateDraftInput>
-  ) => Promise<DraftPost | null>
+  ) => Promise<void>
   deleteDraft: (id: string) => Promise<void>
+  duplicateDraft: (id: string) => Promise<DraftPost>
+  publishDraft: (id: string) => Promise<DraftPost>
 }
 
 // Create the context
@@ -63,7 +65,7 @@ export default function DraftProvider({ children }: DraftProviderProps) {
   })
   const { hasInitialized, drafts, isLoading, error } = state
 
-  const { createDraft, getDraft, updateDraft, fetchDrafts, deleteDraft } =
+  const { createDraft, getDraft, updateDraft, fetchDrafts, deleteDraft, duplicateDraft, publishDraft } =
     useDrafts()
 
   const refresh = useCallback(async () => {
@@ -81,6 +83,7 @@ export default function DraftProvider({ children }: DraftProviderProps) {
     }
   }, [fetchDrafts])
 
+
   useEffect(() => {
     const load = async () => {
       if (!hasInitialized) {
@@ -89,6 +92,18 @@ export default function DraftProvider({ children }: DraftProviderProps) {
       }
     }
     load()
+
+    // Refresh drafts when page becomes visible again
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        wait(1000).then(() => refresh()) // slight delay to ensure visibility state is stable
+        
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
   }, [refresh, hasInitialized])
 
   const contextValue: DraftsContextType = {
@@ -107,13 +122,19 @@ export default function DraftProvider({ children }: DraftProviderProps) {
     },
     refresh,
     createDraft,
-    updateDraft,
+    updateDraft: async (id: string, input: Partial<CreateDraftInput>) => {
+      await updateDraft(id, input)
+      await wait(1000) // slight delay to ensure server is updated
+      await refresh()
+    },
     getDraft,
     deleteDraft: async (id: string) => {
       await deleteDraft(id)
       await wait(1000) // slight delay to ensure server is updated
       await refresh()
     },
+    duplicateDraft,
+    publishDraft,
   }
 
   return (

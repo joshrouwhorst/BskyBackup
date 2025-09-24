@@ -21,6 +21,7 @@ export const APP_URL = process.env.APP_URL || `http://${APP_HOST}:${APP_PORT}`
 
 export const DRAFT_MEDIA_ENDPOINT = '/api/drafts/media'
 export const BACKUP_MEDIA_ENDPOINT = '/api/backup/images'
+export const SUPPORTED_SOCIAL_PLATFORMS = ['bluesky'] as const
 
 export const POSTS_PER_PAGE = 20
 export const MAX_POSTS = 1000
@@ -33,3 +34,5 @@ export const HEADER_NAV_ITEMS = [
   { label: 'Drafts', href: '/drafts' },
   { label: 'Schedules', href: '/schedules' },
 ]
+
+export const CRON_FREQUENCY_MINUTES = 5 // how often to check for scheduled posts

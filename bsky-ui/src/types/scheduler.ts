@@ -2,6 +2,7 @@
 
 export interface Schedule {
   id?: string
+  cronId?: string
   name: string
   frequency: ScheduleFrequency
   isActive: boolean

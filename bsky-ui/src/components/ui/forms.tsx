@@ -1,9 +1,65 @@
 import React from 'react'
 
+type Variant = 'primary' | 'secondary' | 'outline' | 'icon'
+type Size = 'xxs' | 'xs' | 'sm' | 'md' | 'lg'
+type Color = 'primary' | 'secondary' | 'tertiary' | 'danger'
+
+const baseButtonClasses =
+  'font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
+
+const baseLinkClasses =
+  'font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors inline-flex items-center justify-center no-underline'
+
+const getColorClasses = (variant: Variant, color: Color) => {
+  if (variant === 'icon') {
+    return {
+      primary: 'bg-transparent hover:bg-blue-100 dark:hover:bg-gray-900 dark:hover:text-blue-400 text-blue-600 dark:text-blue-400 focus:ring-blue-500 p-1',
+      secondary: 'bg-transparent hover:bg-gray-100 dark:hover:bg-gray-300 dark:hover:text-gray-800 text-gray-700 dark:text-gray-300 focus:ring-gray-500 p-1',
+      tertiary: 'bg-transparent hover:bg-green-100 dark:hover:bg-green-900 text-green-600 dark:text-green-400 focus:ring-green-500 p-1',
+      danger: 'bg-transparent hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400 focus:ring-red-500 p-1',
+    }[color]
+  } else if (variant === 'primary') {
+    return {
+      primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500',
+      secondary: 'bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500',
+      tertiary: 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500',
+      danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
+    }[color]
+  } else if (variant === 'secondary') {
+    return {
+      primary: 'bg-blue-100 hover:bg-blue-200 text-blue-900 focus:ring-blue-500',
+      secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-900 focus:ring-gray-500',
+      tertiary: 'bg-green-100 hover:bg-green-200 text-green-900 focus:ring-green-500',
+      danger: 'bg-red-100 hover:bg-red-200 text-red-900 focus:ring-red-500',
+    }[color]
+  } else {
+    // outline
+    return {
+      primary: 'border border-blue-300 hover:bg-blue-50 text-blue-700 focus:ring-blue-500',
+      secondary: 'border border-gray-300 hover:bg-gray-50 text-gray-700 focus:ring-gray-500',
+      tertiary: 'border border-green-300 hover:bg-green-50 text-green-700 focus:ring-green-500',
+      danger: 'border border-red-300 hover:bg-red-50 text-red-700 focus:ring-red-500',
+    }[color]
+  }
+}
+
+const sizeClasses: Record<Size, string> = {
+  xxs: 'px-0 py-0 text-[6pt]',
+  xs: 'px-0 py-0',
+  sm: 'px-3 py-1.5 text-sm',
+  md: 'px-4 py-2 text-sm',
+  lg: 'px-6 py-3 text-base',
+}
+
+const getSizeClasses = (variant: Variant, size: Size) =>
+  variant === 'icon'
+    ? 'p-1 rounded-full text-base leading-none flex items-center justify-center'
+    : sizeClasses[size]
+
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'icon'
-  size?: 'xxs' | 'xs' | 'sm' | 'md' | 'lg'
-  color?: 'primary' | 'secondary' | 'tertiary' | 'danger'
+  variant?: Variant
+  size?: Size
+  color?: Color
 }
 export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
@@ -13,68 +69,12 @@ export const Button: React.FC<ButtonProps> = ({
   children,
   ...props
 }) => {
-  const baseClasses =
-    'font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
-
-  const getColorClasses = (variant: string, color: string) => {
-    if (variant === 'icon') {
-      // Add hover:text-blue-600 for icon variant
-      return 'bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-inherit hover:text-blue-600 dark:hover:text-blue-400 focus:ring-blue-500 p-1'
-    }
-    if (variant === 'primary') {
-      return {
-        primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500',
-        secondary:
-          'bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500',
-        tertiary:
-          'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500',
-        danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
-      }[color]
-    } else if (variant === 'secondary') {
-      return {
-        primary:
-          'bg-blue-100 hover:bg-blue-200 text-blue-900 focus:ring-blue-500',
-        secondary:
-          'bg-gray-200 hover:bg-gray-300 text-gray-900 focus:ring-gray-500',
-        tertiary:
-          'bg-green-100 hover:bg-green-200 text-green-900 focus:ring-green-500',
-        danger: 'bg-red-100 hover:bg-red-200 text-red-900 focus:ring-red-500',
-      }[color]
-    } else {
-      // outline
-      return {
-        primary:
-          'border border-blue-300 hover:bg-blue-50 text-blue-700 focus:ring-blue-500',
-        secondary:
-          'border border-gray-300 hover:bg-gray-50 text-gray-700 focus:ring-gray-500',
-        tertiary:
-          'border border-green-300 hover:bg-green-50 text-green-700 focus:ring-green-500',
-        danger:
-          'border border-red-300 hover:bg-red-50 text-red-700 focus:ring-red-500',
-      }[color]
-    }
-  }
-
-  const sizeClasses = {
-    xxs: 'px-0 py-0 text-[6pt]',
-    xs: 'px-0 py-0',
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base',
-  }
-
-  // For icon variant, override padding and font size
-  const iconClasses =
-    variant === 'icon'
-      ? 'p-1 rounded-full text-base leading-none flex items-center justify-center'
-      : sizeClasses[size]
-
   return (
     <button
-      className={`${baseClasses} ${getColorClasses(
+      className={`${baseButtonClasses} ${getColorClasses(
         variant,
         color
-      )} ${iconClasses} ${className}`}
+      )} ${getSizeClasses(variant, size)} ${className}`}
       {...props}
     >
       {children}
@@ -84,9 +84,9 @@ export const Button: React.FC<ButtonProps> = ({
 
 interface LinkButtonProps
   extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'icon'
-  size?: 'xxs' | 'xs' | 'sm' | 'md' | 'lg'
-  color?: 'primary' | 'secondary' | 'tertiary' | 'danger'
+  variant?: Variant
+  size?: Size
+  color?: Color
   href: string
   target?: string
 }
@@ -101,70 +101,14 @@ export const LinkButton: React.FC<LinkButtonProps> = ({
   target,
   ...props
 }) => {
-  const baseClasses =
-    'font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors'
-
-  const getColorClasses = (variant: string, color: string) => {
-    if (variant === 'icon') {
-      // Add hover:text-blue-600 for icon variant
-      return 'bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-inherit hover:text-blue-600 dark:hover:text-blue-400 focus:ring-blue-500 p-1'
-    }
-    if (variant === 'primary') {
-      return {
-        primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500',
-        secondary:
-          'bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500',
-        tertiary:
-          'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500',
-        danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
-      }[color]
-    } else if (variant === 'secondary') {
-      return {
-        primary:
-          'bg-blue-100 hover:bg-blue-200 text-blue-900 focus:ring-blue-500',
-        secondary:
-          'bg-gray-200 hover:bg-gray-300 text-gray-900 focus:ring-gray-500',
-        tertiary:
-          'bg-green-100 hover:bg-green-200 text-green-900 focus:ring-green-500',
-        danger: 'bg-red-100 hover:bg-red-200 text-red-900 focus:ring-red-500',
-      }[color]
-    } else {
-      // outline
-      return {
-        primary:
-          'border border-blue-300 hover:bg-blue-50 text-blue-700 focus:ring-blue-500',
-        secondary:
-          'border border-gray-300 hover:bg-gray-50 text-gray-700 focus:ring-gray-500',
-        tertiary:
-          'border border-green-300 hover:bg-green-50 text-green-700 focus:ring-green-500',
-        danger:
-          'border border-red-300 hover:bg-red-50 text-red-700 focus:ring-red-500',
-      }[color]
-    }
-  }
-
-  const sizeClasses = {
-    xxs: 'px-0 py-0 text-[6pt]',
-    xs: 'px-0 py-0',
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base',
-  }
-
-  // For icon variant, override padding and font size
-  const iconClasses =
-    variant === 'icon'
-      ? 'p-1 rounded-full text-base leading-none flex items-center justify-center'
-      : sizeClasses[size]
-
   return (
     <a
       href={href}
       target={target}
-      className={`${baseClasses} ${getColorClasses(
+      className={`${baseLinkClasses} ${getColorClasses(
         variant,
         color
-      )} ${iconClasses} inline-flex items-center justify-center no-underline ${className}`}
+      )} ${getSizeClasses(variant, size)} ${className}`}
       {...props}
     >
       {children}

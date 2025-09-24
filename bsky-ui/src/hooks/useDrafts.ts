@@ -11,6 +11,8 @@ interface DraftHookContext {
     input: Partial<CreateDraftInput>
   ) => Promise<DraftPost | null>
   deleteDraft: (id: string) => Promise<void>
+  duplicateDraft: (id: string) => Promise<DraftPost>
+  publishDraft: (id: string) => Promise<DraftPost>
 }
 
 export function useDrafts(): DraftHookContext {
@@ -114,6 +116,42 @@ export function useDrafts(): DraftHookContext {
     }
   }, [])
 
+  const duplicateDraft = useCallback(async (id: string) => {
+    try {
+      const response = await fetch(
+        `/api/drafts/${encodeURIComponent(id)}?duplicate=true`,
+        {
+          method: 'POST',
+        }
+      )
+      if (!response.ok) {
+        throw new Error('Failed to duplicate draft')
+      }
+      const data: DraftPost = await response.json()
+      return data
+    } catch (error) {
+      throw error
+    }
+  }, [])
+
+  const publishDraft = useCallback(async (id: string) => {
+    try {
+      const response = await fetch(
+        `/api/drafts/${encodeURIComponent(id)}?publish=true`,
+        {
+          method: 'POST',
+        }
+      )
+      if (!response.ok) {
+        throw new Error('Failed to publish draft')
+      }
+      const data: DraftPost = await response.json()
+      return data
+    } catch (error) {
+      throw error
+    }
+  }, [])
+
   return {
     fetchDrafts,
     createDraft,
@@ -121,5 +159,7 @@ export function useDrafts(): DraftHookContext {
     getDraft,
     updateDraft,
     deleteDraft,
+    duplicateDraft,
+    publishDraft,
   }
 }
