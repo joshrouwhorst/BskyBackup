@@ -5,4 +5,5 @@ export const HEADER_NAV_ITEMS = [
   { label: 'Home', href: '/' },
   { label: 'Drafts', href: '/drafts' },
   { label: 'Schedules', href: '/schedules' },
+  { label: 'Settings', href: '/settings' },
 ]

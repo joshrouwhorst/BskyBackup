@@ -10,12 +10,13 @@ import {
 } from '@/app/api/services/DraftPostService'
 import type { CreateDraftInput } from '@/types/drafts'
 
-export async function GET(
-  request: Request,
-  context: { params: { id: string } }
-) {
+export async function GET(request: Request, ctx: { params: { id: string } }) {
   try {
-    const { id } = await context.params
+    let id = null
+    if (ctx?.params) {
+      id = await ctx.params.id
+    }
+
     const { searchParams } = new URL(request.url)
     const group = searchParams.get('group') || undefined
     if (id) {

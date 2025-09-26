@@ -31,9 +31,9 @@ APP_DATA_ENCRYPTION_KEY is an encryption key for encoding settings including soc
 
 Run `bun dev` to start development server
 
-Open [https://localhost:3000] in your browser.
+Open [https://localhost:3000](https://localhost:3000) in your browser.
 
-You should be redirected to [https://localhost:3000/settings] until you input required information for setup such as your desired backup location on your file system and your Bluesky credentials.
+You should be redirected to [https://localhost:3000/settings](https://localhost:3000/settings) until you input required information for setup such as your desired backup location on your file system and your Bluesky credentials.
 
 ### Bluesky Credentials
 
