@@ -6,13 +6,13 @@ A Next.js application for viewing and managing your Bluesky social media backup 
 
 **Backup**
 
-- Backup Bluesky Account Locally
+- Backup your Bluesky account locally
 - Prune posts older than a given deadline
 - Repost previously pruned posts (coming soon)
 
 **Scheduling**
 
-- Create drafts of posts and group them for scheduling
+- Create drafts of posts and group them for scheduling (data all stored on local file system)
 - Create schedules to publish from the draft post groups
   - This allows you to create a group of "Mundaine Monday" posts and schedule them to post every week on a Monday.
 - Sort upcoming drafts so they post in the order you want
