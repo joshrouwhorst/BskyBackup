@@ -1,7 +1,7 @@
 # BskyBackup - Local backup, drafts & scheduling for Bluesky
 
 TODO: setup screenshot
-![Screenshot of BskyBackup](https://github.com/)
+![Screenshot of BskyBackup](https://github.com/joshrouwhorst/BskyBackup/blob/main/public/screenshot.png?raw=true)
 
 A Next.js application for viewing and managing your Bluesky social media backup data, create draft posts, and schedule them to be published, all **local** and **private**.
 
