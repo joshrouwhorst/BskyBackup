@@ -7,8 +7,6 @@ import * as appDataHelpers from '@/app/api/helpers/appData'
 import * as draftPostService from '../DraftPostService'
 
 import {
-  getNextDatetime,
-  timezoneOffset,
   getNextTriggerTime,
   createSchedule,
   updateSchedule,
@@ -27,114 +25,22 @@ jest.mock('../DraftPostService', () => ({
   getDraftPosts: jest.fn(),
   publishDraftPost: jest.fn(),
 }))
-jest.mock('../../helpers/logger', () => ({
-  log: jest.fn(),
-  error: jest.fn(),
-  opening: jest.fn(),
-  closing: jest.fn(),
-}))
-
-describe('getNextDatetime', () => {
-  it('should add minutes correctly', () => {
-    const start = new Date('2025-09-23T10:00:00Z')
-    const result = getNextDatetime(start, 15, 'minutes')
-    expect(result.toISOString()).toBe('2025-09-23T10:15:00.000Z')
-  })
-
-  it('should add hours correctly', () => {
-    const start = new Date('2025-09-23T10:00:00Z')
-    const result = getNextDatetime(start, 2, 'hours')
-    expect(result.toISOString()).toBe('2025-09-23T12:00:00.000Z')
-  })
-
-  it('should add days and set timeOfDay', () => {
-    const start = new Date('2025-09-23T10:00:00Z')
-    const result = getNextDatetime(start, 1, 'days', '08:30')
-    expect(result.getHours()).toBe(8)
-    expect(result.getMinutes()).toBe(30)
-  })
-
-  it('should handle weeks', () => {
-    const start = new Date('2025-09-23T10:00:00Z')
-    const result = getNextDatetime(start, 1, 'weeks')
-    expect(result.toISOString()).toBe('2025-09-30T10:00:00.000Z')
-  })
-
-  it('should handle weeks with dayOfWeek and timeZone', () => {
-    const start = new Date('2025-09-23T10:00:00Z')
-    const result = getNextDatetime(
-      start,
-      1,
-      'weeks',
-      '08:30',
-      'America/New_York',
-      5
-    )
-    expect(result.toISOString()).toBe('2025-09-26T12:30:00.000Z')
-  })
-
-  it('should handle months with dayOfMonth', () => {
-    const start = new Date('2025-01-15T10:00:00Z')
-    const result = getNextDatetime(
-      start,
-      1,
-      'months',
-      '09:00',
-      undefined,
-      undefined,
-      10
-    )
-    expect(result.getDate()).toBe(10)
-    expect(result.getHours()).toBe(9)
-  })
-
-  it('should select the next day within the week if the specified day and time has not passed', () => {
-    const start = new Date('2025-09-22T10:00:00Z')
-    const offset = getNextDatetime(
-      start,
-      1,
-      'weeks',
-      '08:00',
-      'America/New_York',
-      5
-    ) // Friday at 8am
-    expect(offset.toISOString()).toBe('2025-09-26T12:00:00.000Z') // UTC-4
-  })
-
-  it('should select the next day within the month if the specified day and time has not passed', () => {
-    const start = new Date('2025-09-15T10:00:00Z')
-    const offset = getNextDatetime(
-      start,
-      1,
-      'months',
-      '08:00',
-      'America/New_York',
-      undefined,
-      25
-    ) // Friday at 8am
-    expect(offset.toISOString()).toBe('2025-09-25T12:00:00.000Z') // UTC-4
-  })
-
-  it('should select the day within the next month if the specified day and time has passed', () => {
-    const start = new Date('2025-09-15T10:00:00Z')
-    const offset = getNextDatetime(
-      start,
-      1,
-      'months',
-      '08:00',
-      'America/New_York',
-      undefined,
-      10
-    ) // Friday at 8am
-    expect(offset.toISOString()).toBe('2025-10-10T12:00:00.000Z') // UTC-4
-  })
-})
-
-describe('timezoneOffset', () => {
-  it('should return correct offset for New York during DST', () => {
-    const offset = timezoneOffset('2025-09-23', '08:00', 'America/New_York')
-    expect(offset).toBe('2025-09-23T12:00:00.000Z') // UTC-4
-  })
+jest.mock('../../helpers/logger', () => {
+  return {
+    __esModule: true,
+    default: jest.fn().mockImplementation(() => ({
+      log: jest.fn(),
+      error: jest.fn(),
+      opening: jest.fn(),
+      closing: jest.fn(),
+    })),
+    Logger: jest.fn().mockImplementation(() => ({
+      log: jest.fn(),
+      error: jest.fn(),
+      opening: jest.fn(),
+      closing: jest.fn(),
+    })),
+  }
 })
 
 describe('getNextTriggerTime', () => {

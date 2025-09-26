@@ -1,9 +1,12 @@
 import { AtpAgent } from '@atproto/api'
 import { FeedViewPost } from '@/types/bsky'
-import { BSKY_IDENTIFIER, BSKY_PASSWORD, DRAFT_POSTS_PATH } from '@/config'
+import { BSKY_IDENTIFIER, BSKY_PASSWORD, DRAFT_POSTS_PATH } from '@/config/api'
 import { DraftPost } from '@/types/drafts'
 import fs from 'fs/promises'
 import { Main } from '@atproto/api/dist/client/types/app/bsky/richtext/facet'
+import { Governor } from './governor'
+
+const governor = new Governor(1000)
 
 export interface PostFilters {
   cutoffDate?: Date
@@ -27,6 +30,8 @@ export async function getPosts(
   ) {
     return postCache
   }
+
+  await governor.wait()
 
   const postList: FeedViewPost[] = []
 
@@ -89,7 +94,43 @@ export async function getPosts(
   return postList
 }
 
+export async function deletePostsWithUris(postUris: string[]): Promise<void> {
+  await governor.wait()
+  const agent = new AtpAgent({
+    service: 'https://bsky.social',
+  })
+
+  try {
+    console.log(`Authenticating with Bluesky as ${BSKY_IDENTIFIER}...`)
+    await agent.login({
+      identifier: BSKY_IDENTIFIER,
+      password: BSKY_PASSWORD,
+    })
+    console.log('Successfully authenticated with Bluesky')
+
+    for (const postUri of postUris) {
+      console.log(`Deleting post: ${postUri}`)
+      await agent.deletePost(postUri)
+      console.log(`Successfully deleted post: ${postUri}`)
+    }
+  } catch (error) {
+    console.error('Error deleting post:', error)
+    throw new Error(
+      `Failed to delete post: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    )
+  } finally {
+    try {
+      await agent.logout()
+    } catch (logoutError) {
+      console.warn('Error during logout:', logoutError)
+    }
+  }
+}
+
 export async function deletePosts(config: PostFilters): Promise<void> {
+  await governor.wait()
   const agent = new AtpAgent({
     service: 'https://bsky.social',
   })
@@ -197,6 +238,7 @@ export async function deletePosts(config: PostFilters): Promise<void> {
         console.log(
           `Deleting post ${i + 1}/${postsToDelete.length}: ${postUri}`
         )
+        await governor.wait(200)
         await agent.deletePost(postUri)
 
         // Add delay between deletions to avoid rate limiting
@@ -246,6 +288,7 @@ function removeOriginalPosts(posts: FeedViewPost[]): FeedViewPost[] {
 }
 
 export async function addPost(post: DraftPost) {
+  await governor.wait()
   const agent = new AtpAgent({
     service: 'https://bsky.social',
   })
@@ -269,6 +312,7 @@ export async function addPost(post: DraftPost) {
         parts.push(post.meta.id, post.meta.mediaDir, image.filename)
         const path = parts.join('/')
         const imageData = await fs.readFile(path) // or however you get the image data
+        await governor.wait(200)
         const uploadResponse = await agent.uploadBlob(imageData, {
           encoding: image.mime || 'image/jpeg',
         })
@@ -282,6 +326,7 @@ export async function addPost(post: DraftPost) {
     let uploadedVideo = null
     if (post.meta.video) {
       const videoData = await fs.readFile(post.meta.video.filename)
+      await governor.wait(200)
       const uploadResponse = await agent.uploadBlob(videoData, {
         encoding: post.meta.video.mime || 'video/mp4',
       })
@@ -294,9 +339,10 @@ export async function addPost(post: DraftPost) {
 
     const facets = post.meta.text ? getFacetsFromText(post.meta.text) : []
 
+    await governor.wait(200)
     await agent.post({
       text: post.meta.text,
-      createdAt: (new Date()).toISOString(),
+      createdAt: new Date().toISOString(),
       langs: ['en'],
       facets,
       embed:
@@ -328,49 +374,151 @@ export async function addPost(post: DraftPost) {
   }
 }
 
-function getFacetsFromText(text: string): Main[] {
+// Convert UTF-16 code-unit index/length to UTF-8 byte offsets
+function utf16IndexToUtf8ByteOffset(str: string, utf16Index: number) {
+  // take substring up to utf16Index, encode as UTF-8, return byte length
+  return new TextEncoder().encode(str.slice(0, utf16Index)).length
+}
+
+function utf16RangeToUtf8ByteRange(
+  str: string,
+  utf16Start: number,
+  utf16Length: number
+) {
+  const byteStart = utf16IndexToUtf8ByteOffset(str, utf16Start)
+  const byteEnd =
+    byteStart +
+    new TextEncoder().encode(str.slice(utf16Start, utf16Start + utf16Length))
+      .length
+  return { byteStart, byteEnd }
+}
+
+export function getFacetsFromText(text: string): Main[] {
+  return text
+    .split(/(\s+)/)
+    .map((part, index) => {
+      // Handle URLs
+      if (part.match(/^https?:\/\/\S+/)) {
+        const { byteStart, byteEnd } = utf16RangeToUtf8ByteRange(
+          text,
+          text.indexOf(part),
+          part.length
+        )
+        return {
+          $type: 'app.bsky.richtext.facet',
+          index: {
+            byteStart,
+            byteEnd,
+          },
+          features: [
+            {
+              $type: 'app.bsky.richtext.facet#link',
+              uri: part,
+            },
+          ],
+        } as Main
+      }
+      // Handle mentions
+      if (part.match(/^@\w+/)) {
+        const { byteStart, byteEnd } = utf16RangeToUtf8ByteRange(
+          text,
+          text.indexOf(part),
+          part.length
+        )
+        return {
+          $type: 'app.bsky.richtext.facet',
+          index: {
+            byteStart,
+            byteEnd,
+          },
+          features: [
+            {
+              $type: 'app.bsky.richtext.facet#mention',
+              did: 'did:example:' + part.slice(1), // Placeholder DID, replace with actual lookup if available
+            },
+          ],
+        }
+      }
+      // Handle hashtags
+      if (part.match(/^#\w+/)) {
+        const { byteStart, byteEnd } = utf16RangeToUtf8ByteRange(
+          text,
+          text.indexOf(part),
+          part.length
+        )
+        return {
+          $type: 'app.bsky.richtext.facet',
+          index: {
+            byteStart,
+            byteEnd,
+          },
+          features: [
+            {
+              $type: 'app.bsky.richtext.facet#tag',
+              tag: part.slice(1),
+            },
+          ],
+        }
+      }
+      return null
+    })
+    .filter((f): f is Main => f !== null)
+}
+
+export function oldGetFacetsFromText(text: string): Main[] {
   const facets: Main[] = []
   const mentionRegex = /@([a-zA-Z0-9_\.]+)/g
   const urlRegex = /(https?:\/\/[^\s]+)/g
   const tagRegex = /#(\w+)/g
-  
+
   let match: RegExpExecArray | null
+  const encoder = new TextEncoder()
   while ((match = mentionRegex.exec(text)) !== null) {
-    const start = match.index
-    const end = start + match[0].length
+    const utf16Index = match.index
+    const byteStart = encoder.encode(text.slice(0, utf16Index)).length
+    const byteEnd = byteStart + encoder.encode(match[0]).length
+
     facets.push({
       $type: 'app.bsky.richtext.facet',
-      index: { byteStart: start, byteEnd: end },
-      features: [{
-        $type: 'app.bsky.richtext.facet#mention',
-        did: 'did:example:' + match[1] // Placeholder DID, replace with actual lookup if available
-      }]
+      index: { byteStart, byteEnd },
+      features: [
+        {
+          $type: 'app.bsky.richtext.facet#mention',
+          did: 'did:example:' + match[1], // Placeholder DID, replace with actual lookup if available
+        },
+      ],
     })
   }
-  
+
   while ((match = urlRegex.exec(text)) !== null) {
-    const start = match.index
-    const end = start + match[0].length
+    const utf16Index = match.index
+    const byteStart = encoder.encode(text.slice(0, utf16Index)).length
+    const byteEnd = byteStart + encoder.encode(match[0]).length
     facets.push({
       $type: 'app.bsky.richtext.facet',
-      index: { byteStart: start, byteEnd: end },
-      features: [{
-        $type: 'app.bsky.richtext.facet#link',
-        uri: match[0]
-      }]
+      index: { byteStart, byteEnd },
+      features: [
+        {
+          $type: 'app.bsky.richtext.facet#link',
+          uri: match[0],
+        },
+      ],
     })
   }
-  
+
   while ((match = tagRegex.exec(text)) !== null) {
-    const start = match.index
-    const end = start + match[0].length
+    const utf16Index = match.index
+    const byteStart = encoder.encode(text.slice(0, utf16Index)).length
+    const byteEnd = byteStart + encoder.encode(match[0]).length
     facets.push({
       $type: 'app.bsky.richtext.facet',
-      index: { byteStart: start, byteEnd: end },
-      features: [{
-        $type: 'app.bsky.richtext.facet#tag',
-        tag: match[1]
-      }]
+      index: { byteStart, byteEnd },
+      features: [
+        {
+          $type: 'app.bsky.richtext.facet#tag',
+          tag: match[1],
+        },
+      ],
     })
   }
 

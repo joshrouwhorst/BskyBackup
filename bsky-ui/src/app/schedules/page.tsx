@@ -7,6 +7,7 @@ import ScheduleDisplay from '@/components/schedules/ScheduleDisplay'
 import ScheduleEditForm from '@/components/schedules/ScheduleEditForm'
 import ScheduleProvider from '@/providers/ScheduleProvider'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import DraftProvider from '@/providers/DraftsProvider'
 
 export default function SchedulesPage() {
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(
@@ -39,6 +40,7 @@ export default function SchedulesPage() {
 
   return (
     <AppDataProvider>
+      <DraftProvider>
       <ScheduleProvider>
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
@@ -106,6 +108,7 @@ export default function SchedulesPage() {
           </div>
         </div>
       </ScheduleProvider>
+      </DraftProvider>
     </AppDataProvider>
   )
 }

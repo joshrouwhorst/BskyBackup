@@ -11,6 +11,7 @@ interface SchedulesHookContext {
   updateSchedule: (input: Schedule) => Promise<Schedule>
   deleteSchedule: (id: string) => Promise<void>
   triggerSchedule: (scheduleId: string) => Promise<void>
+  getNextPost: (scheduleId: string) => Promise<DraftPost | null>
   reorderSchedulePosts: (
     scheduleId: string,
     draftPostIds: string[]
@@ -119,6 +120,18 @@ export function useSchedules(): SchedulesHookContext {
     }
   }, [])
 
+  const getNextPost = useCallback(
+    async (scheduleId: string): Promise<DraftPost | null> => {
+      const response = await fetch(`/api/schedules/${scheduleId}/posts`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch next post for schedule')
+      }
+      const data: DraftPost | null = await response.json()
+      return data
+    },
+    []
+  )
+
   const reorderSchedulePosts = useCallback(
     async (scheduleId: string, draftPostIds: string[]) => {
       setLoading(true)
@@ -172,5 +185,6 @@ export function useSchedules(): SchedulesHookContext {
     deleteSchedule,
     reorderSchedulePosts,
     triggerSchedule,
+    getNextPost,
   }
 }

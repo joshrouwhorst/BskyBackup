@@ -1,7 +1,6 @@
 'use client'
 import { Select } from '../ui/forms'
 import { useEffect, useState } from 'react'
-import { DEFAULT_TIMEZONE } from '@/config'
 
 interface TimezoneSelectProps {
   value?: string
@@ -9,7 +8,7 @@ interface TimezoneSelectProps {
 }
 
 const TimezoneSelect: React.FC<TimezoneSelectProps> = ({
-  value = DEFAULT_TIMEZONE,
+  value = 'UTC',
   onChange,
 }) => {
   const [hasInitialized, setHasInitialized] = useState(false)

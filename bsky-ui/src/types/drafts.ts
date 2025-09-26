@@ -9,7 +9,7 @@ export type DraftMediaFileInput = {
 
 export type CreateDraftInput = {
   id?: string // optional custom id; otherwise generated
-  group?: string // group identifier for the post
+  group: string // group identifier for the post
   text?: string
   images?: DraftMediaFileInput[] // up to 4
   video?: DraftMediaFileInput | null // optional short video
@@ -40,6 +40,6 @@ export type DraftMeta = {
 
 export type DraftPost = {
   dir: string // full path on disk for the post
-  group?: string // group identifier for the post
+  group: string // group identifier for the post
   meta: DraftMeta
 }

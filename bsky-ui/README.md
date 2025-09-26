@@ -4,15 +4,27 @@ A Next.js application for viewing and managing your Bluesky social media backup 
 
 ## Project Overview
 
-This app reads your Bluesky backup files and displays them in a clean, browsable interface. It serves local images through an API route and provides tools for managing your posts.
+This app reads your Bluesky backup files and displays them in a clean, browseable interface. It serves local images through an API route and provides tools for managing past posts and drafting new ones. You can create schedules and have posts automatically sent (assuming you are continuously running this application).
 
 ## Quick Start
 
-```bash
-bun dev
+Make sure your `.env` file in the root of the project has this variable:
+
+```
+APP_DATA_ENCRYPTION_KEY='your value here'
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view your Bluesky backup.
+APP_DATA_ENCRYPTION_KEY is an encryption key for encoding settings including social media credentials for the app. For maximum security it should be 32 characters long.
+
+Run `bun dev` to start development server
+
+Open [https://localhost:3000] in your browser.
+
+You should be redirected to [https://localhost:3000/settings] until you input required information for setup such as your desired backup location on your file system and your Bluesky credentials.
+
+### Bluesky Credentials
+
+I recommend setting up an app password specifically for this. On the Bluesky app you can go to Settings -> Privacy & Security -> App passwords to generate one. There is no need to enable direct messages access at this time.
 
 ## Important File Locations
 
@@ -106,24 +118,6 @@ src/
 - **Client Components**: Interactive UI marked with `'use client'`
 - **Compound Components**: `PostList.ToolBar` pattern for related components
 - **Type Safety**: Full TypeScript coverage for Bluesky data structures
-
-### Local Development
-
-Make sure your `.env` file in the root of the project has these variables:
-
-```
-BSKY_IDENTIFIER=
-BSKY_PASSWORD=
-BSKY_BACKUP_LOCATION=
-DEFAULT_PRUNE_MONTHS=
-```
-
-BSKY_IDENTIFIER is your Bluesky username.
-BSKY_PASSWORD is your Bluesky app password for this app.
-BSKY_BACKUP_LOCATION is the local file path to the directory you want the backup files stored.
-DEFAULT_PRUNE_MONTHS is the number of months you leave up on Bluesky after pruning.
-
-Run `bun dev` to start development server
 
 ### Troubleshooting
 

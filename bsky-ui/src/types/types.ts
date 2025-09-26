@@ -6,6 +6,16 @@ export interface AppData {
   totalPostsBackedUp?: number | null
   oldestBskyPostDate?: string | null
   schedules?: Schedule[] | null
+  settings?: Settings | null
+}
+
+export interface Settings {
+  bskyIdentifier?: string
+  bskyPassword?: string
+  bskyDisplayName?: string
+  backupLocation?: string
+  pruneAfterMonths?: number
+  hasOnboarded: boolean
 }
 
 export interface PostMedia {

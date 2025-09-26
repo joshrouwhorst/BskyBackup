@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { ScheduleFrequency } from '@/types/scheduler'
 import { Input, Label, Select } from '../ui/forms'
 import TimezoneSelect from './TimezoneSelect'
-import { DEFAULT_TIMEZONE } from '@/config'
 
 const daysOfWeek = [
   'Sunday',
@@ -19,7 +18,7 @@ const DEFAULT_FREQUENCY: ScheduleFrequency = {
   dayOfWeek: 0,
   dayOfMonth: 1,
   timeOfDay: '09:00',
-  timeZone: DEFAULT_TIMEZONE,
+  timeZone: 'UTC',
 }
 
 export default function FrequencyInput({

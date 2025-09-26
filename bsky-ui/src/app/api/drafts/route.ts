@@ -12,12 +12,17 @@ import type { CreateDraftInput } from '@/types/drafts'
 
 export async function GET(
   request: Request,
-  { params }: { params: { group?: string } }
+  context: { params: { id: string } }
 ) {
-  await params
   try {
-    if (params?.group) {
-      const posts = await getDraftPostsInGroup(params.group)
+    const { id } = await context.params
+    const { searchParams } = new URL(request.url)
+    const group = searchParams.get('group') || undefined
+    if (id) {
+      const post = await getDraftPost(id)
+      return NextResponse.json(post)
+    } else if (group) {
+      const posts = await getDraftPostsInGroup(group)
       return NextResponse.json(posts)
     } else {
       const appData = await getDraftPosts()
@@ -26,9 +31,7 @@ export async function GET(
   } catch (error) {
     return NextResponse.json(
       {
-        error: params?.group
-          ? 'Failed to fetch posts'
-          : 'Failed to fetch app data',
+        error: 'Failed to fetch posts',
       },
       { status: 500 }
     )

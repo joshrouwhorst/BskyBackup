@@ -3,6 +3,7 @@
 import React, { createContext, useContext, ReactNode } from 'react'
 import { CreateScheduleRequest, Schedule } from '@/types/scheduler'
 import { useSchedules } from '@/hooks/useSchedules'
+import { DraftPost } from '@/types/drafts'
 
 interface SchedulesContextType {
   schedules: Schedule[]
@@ -12,6 +13,7 @@ interface SchedulesContextType {
   updateSchedule: (input: Schedule) => Promise<Schedule>
   deleteSchedule: (id: string) => Promise<void>
   triggerSchedule: (scheduleId: string) => Promise<void>
+  getNextPost: (scheduleId: string) => Promise<DraftPost | null>
 }
 
 // Create the context
@@ -32,6 +34,7 @@ export default function ScheduleProvider({ children }: ScheduleProviderProps) {
     updateSchedule,
     deleteSchedule,
     triggerSchedule,
+    getNextPost,
   } = useSchedules()
 
   const contextValue: SchedulesContextType = {
@@ -42,6 +45,7 @@ export default function ScheduleProvider({ children }: ScheduleProviderProps) {
     updateSchedule,
     deleteSchedule,
     triggerSchedule,
+    getNextPost,
   }
 
   return (

@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+// @ts-ignore
 import './globals.css'
 import HeaderNav from '@/components/HeaderNav'
+import SettingsProvider from '@/providers/SettingsProvider'
+import AppDataProvider from '@/providers/AppDataProvider'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -29,7 +32,11 @@ export default function RootLayout({
         <HeaderNav />
         <div className="container mx-auto px-4 py-6">
           {/* Main content area */}
-          {children}
+            <AppDataProvider>
+              <SettingsProvider>
+                {children}
+              </SettingsProvider>
+            </AppDataProvider>
         </div>
       </body>
     </html>

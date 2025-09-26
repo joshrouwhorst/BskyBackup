@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { LOGS_PATH } from '@/config'
+import { LOGS_PATH } from '@/config/main'
 import { formatDate } from '@/helpers/utils'
 
 const SHOW_OBJECTS_IN_LOGS = false // Set to false to disable logging objects
@@ -17,63 +17,76 @@ function getLogFilePath(): string {
   return resolvedPath
 }
 
+function padName(name: string): string {
+  if (name.length >= 10) return name.slice(0, 10)
+  return name + ' '.repeat(10 - name.length)
+}
+
 class Logger {
-  private static appendLine(message: string) {
-    const line = `${formatDate(new Date())} | ${message}\n`
+  private name: string
+
+  constructor(name: string) {
+    this.name = padName(name)
+  }
+
+  private appendLine(message: string) {
+    const line = `${formatDate(new Date())} | ${this.name} | ${message}\n`
     fs.appendFileSync(getLogFilePath(), line, 'utf-8')
     console.log(line.trim())
   }
 
-  static blank() {
-    Logger.appendLine('')
+  blank() {
+    this.appendLine('')
   }
 
-  static blanks(count: number) {
+  blanks(count: number) {
     for (let i = 0; i < count; i++) {
-      Logger.blank()
+      this.blank()
     }
   }
 
-  static divider() {
-    Logger.appendLine('----------------------------------------')
+  divider() {
+    this.appendLine('----------------------------------------')
   }
 
-  static opening(name: string) {
-    Logger.blanks(2)
-    Logger.appendLine(`********** START ${name} **********`)
+  opening(section: string) {
+    this.blanks(2)
+    this.appendLine(`********** START ${section} **********`)
   }
 
-  static closing(name: string) {
-    Logger.appendLine(`********** END ${name} **********`)
-    Logger.blanks(2)
+  closing(section: string) {
+    this.appendLine(`********** END ${section} **********`)
+    this.blanks(2)
   }
 
-  static log(message: string, object?: any) {
-    Logger.appendLine(message)
+  log(message: string, object?: any) {
+    this.appendLine(message)
     if (object && SHOW_OBJECTS_IN_LOGS) {
-      Logger.appendLine(JSON.stringify(object, getCircularReplacer(), 2))
+      this.appendLine(JSON.stringify(object, getCircularReplacer(), 2))
     }
   }
 
-  static error(message: string, error?: any) {
-    Logger.appendLine(`ERROR: ${message}`)
+  error(message: string, error?: any) {
+    this.appendLine(`ERROR: ${message}`)
     if (error && SHOW_OBJECTS_IN_LOGS) {
-      Logger.appendLine(`ERROR DETAILS: ${JSON.stringify(error, getCircularReplacer(), 2)}`)
+      this.appendLine(
+        `ERROR DETAILS: ${JSON.stringify(error, getCircularReplacer(), 2)}`
+      )
     }
   }
 }
 
 function getCircularReplacer() {
-  const seen = new WeakSet();
+  const seen = new WeakSet()
   return function (key: string, value: any) {
-    if (typeof value === "object" && value !== null) {
+    if (typeof value === 'object' && value !== null) {
       if (seen.has(value)) {
-        return "[Circular]";
+        return '[Circular]'
       }
-      seen.add(value);
+      seen.add(value)
     }
-    return value;
-  };
+    return value
+  }
 }
 
 export default Logger

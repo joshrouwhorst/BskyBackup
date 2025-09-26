@@ -14,8 +14,6 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const { searchParams } = new URL(request.url)
-    const group = searchParams.get('group')
     if (!id) {
       return NextResponse.json(
         { error: 'Post ID is required' },

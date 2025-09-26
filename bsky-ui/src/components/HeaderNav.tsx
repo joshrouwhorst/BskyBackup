@@ -1,4 +1,4 @@
-import { HEADER_NAV_ITEMS } from '@/config'
+import { HEADER_NAV_ITEMS } from '@/config/frontend'
 import Link from 'next/link'
 
 const HeaderNav = () => (

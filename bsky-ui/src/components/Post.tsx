@@ -20,6 +20,9 @@ import PostMediaCarousel from './PostMediaCarousel'
 import { Button, LinkButton } from './ui/forms'
 import { useDraftContext } from '@/providers/DraftsProvider'
 
+const BSKY_DISPLAY_NAME = 'Your Display Name' // TODO: Get this from app data
+const BSKY_IDENTIFIER = 'yourusername.bsky.social' 
+
 interface PostProps {
   postData?: PostData
   draftPost?: DraftPost
@@ -71,8 +74,8 @@ function getDisplayDataFromDraft(draftPost: DraftPost): PostDisplayData {
   return {
     text: draftPost.meta.text || '',
     author: {
-      displayName: 'JoshFromGR',
-      handle: 'joshfromgr.com',
+      displayName: BSKY_DISPLAY_NAME, // TODO: Get this from bluesky profile data
+      handle: BSKY_IDENTIFIER,
     },
     indexedAt: draftPost.meta.createdAt,
     isRepost: false,

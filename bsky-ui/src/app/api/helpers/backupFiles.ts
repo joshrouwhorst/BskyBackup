@@ -1,6 +1,6 @@
 import path from 'path'
 import { FeedViewPost } from '@/types/bsky'
-import { POST_BACKUP_FILE, BACKUP_MEDIA_PATH } from '@/config'
+import { POST_BACKUP_FILE, BACKUP_MEDIA_PATH } from '@/config/api'
 import { saveJsonToFile, readJsonFromFile, downloadFile } from './utils'
 
 export async function openBackup(): Promise<FeedViewPost[]> {

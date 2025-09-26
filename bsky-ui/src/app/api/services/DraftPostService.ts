@@ -1,16 +1,18 @@
 import { PostsStore } from '../helpers/PostsStore'
-import { DRAFT_POSTS_PATH, SUPPORTED_SOCIAL_PLATFORMS } from '@/config'
+import { DRAFT_POSTS_PATH, SUPPORTED_SOCIAL_PLATFORMS } from '@/config/api'
 import type { CreateDraftInput, DraftPost } from '@/types/drafts'
 import { addPost as addPostToBsky } from '@/app/api/helpers/bluesky'
 import { SocialPlatform } from '@/types/scheduler'
 import Logger from '../helpers/logger'
+
+const logger = new Logger('DrPostServ')
 
 const store = new PostsStore(DRAFT_POSTS_PATH)
 
 init()
 
 function init() {
-  Logger.log('DraftPostService initialized.')
+  logger.log('DraftPostService initialized.')
 }
 
 export async function getDraftPostsInGroup(
@@ -27,6 +29,14 @@ export async function getDraftPost(
   id: string,
   group?: string
 ): Promise<DraftPost | null> {
+  if (!group) {
+    const groups = await store.listGroups()
+    for (const g of groups) {
+      const post = await store.readPostDir(id, g)
+      if (post) return post
+    }
+    return null
+  }
   const post = await store.readPostDir(id, group)
   if (post) return post
   const posts = await store.listPosts()
@@ -56,7 +66,7 @@ export async function duplicateDraftPost(id: string): Promise<DraftPost> {
 export async function updateDraftPost(
   id: string,
   input: CreateDraftInput
-): Promise<DraftPost> {
+): Promise<DraftPost | null> {
   return store.updatePost(id, input)
 }
 
@@ -112,7 +122,7 @@ export async function reorderGroupPosts(
   group: string,
   newOrder: string[]
 ): Promise<void> {
-  Logger.log(`Reordering posts for group ${group}.`, { newOrder })
+  logger.log(`Reordering posts for group ${group}.`, { newOrder })
   const postsToReorder = await getDraftPostsInGroup(group)
 
   if (postsToReorder.length !== newOrder.length) {
