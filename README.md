@@ -4,7 +4,20 @@ A Next.js application for viewing and managing your Bluesky social media backup 
 
 ## Project Overview
 
-This app reads your Bluesky backup files and displays them in a clean, browseable interface. It serves local images through an API route and provides tools for managing past posts and drafting new ones. You can create schedules and have posts automatically sent (assuming you are continuously running this application).
+**Backup**
+
+- Backup Bluesky Account Locally
+- Prune posts older than a given deadline
+- Repost previously pruned posts (coming soon)
+
+**Scheduling**
+
+- Create drafts of posts and group them for scheduling
+- Create schedules to publish from the draft post groups
+  - This allows you to create a group of "Mundaine Monday" posts and schedule them to post every week on a Monday.
+- Sort upcoming drafts so they post in the order you want
+
+This app reads your Bluesky backup files and displays them in a clean, browseable interface. You can create schedules and have posts automatically sent (assuming you are continuously running this application).
 
 ## Quick Start
 
