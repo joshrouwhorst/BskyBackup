@@ -1,5 +1,5 @@
 import {
-  getNextPost,
+  getScheduleLookups,
   publishNextPost,
 } from '../../../services/SchedulePostService'
 import { NextRequest, NextResponse } from 'next/server'
@@ -10,17 +10,17 @@ export async function GET(
 ) {
   try {
     const resolvedParams = await params
-    const post = await getNextPost(resolvedParams.id)
-    if (!post) {
+    const lookups = await getScheduleLookups(resolvedParams.id)
+    if (!lookups) {
       return NextResponse.json(
-        { error: 'No scheduled posts found' },
+        { error: 'No scheduled lookups found' },
         { status: 404 }
       )
     }
-    return NextResponse.json(post)
+    return NextResponse.json(lookups)
   } catch (error) {
     return NextResponse.json(
-      { error: 'Failed to fetch scheduled post' },
+      { error: 'Failed to fetch scheduled lookups' },
       { status: 500 }
     )
   }

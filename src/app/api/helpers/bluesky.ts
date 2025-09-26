@@ -21,6 +21,12 @@ export async function getPosts(
   config?: PostFilters,
   useCache: boolean = false
 ): Promise<FeedViewPost[]> {
+  if (!BSKY_IDENTIFIER || !BSKY_PASSWORD) {
+    throw new Error('Bluesky credentials are not set in settings')
+  }
+
+  console.log('BSKY_IDENTIFIER:', BSKY_IDENTIFIER)
+
   // Use cached posts if within cache duration
   if (
     useCache &&
@@ -49,7 +55,7 @@ export async function getPosts(
 
     do {
       const response = await agent.getAuthorFeed({
-        actor: BSKY_IDENTIFIER,
+        actor: BSKY_IDENTIFIER.toLowerCase(),
         cursor,
         limit: 100,
       })
@@ -473,7 +479,8 @@ export function oldGetFacetsFromText(text: string): Main[] {
 
   let match: RegExpExecArray | null
   const encoder = new TextEncoder()
-  while ((match = mentionRegex.exec(text)) !== null) {
+  match = mentionRegex.exec(text)
+  while (match !== null) {
     const utf16Index = match.index
     const byteStart = encoder.encode(text.slice(0, utf16Index)).length
     const byteEnd = byteStart + encoder.encode(match[0]).length
@@ -488,9 +495,11 @@ export function oldGetFacetsFromText(text: string): Main[] {
         },
       ],
     })
+    match = mentionRegex.exec(text)
   }
 
-  while ((match = urlRegex.exec(text)) !== null) {
+  match = urlRegex.exec(text)
+  while (match !== null) {
     const utf16Index = match.index
     const byteStart = encoder.encode(text.slice(0, utf16Index)).length
     const byteEnd = byteStart + encoder.encode(match[0]).length
@@ -504,9 +513,11 @@ export function oldGetFacetsFromText(text: string): Main[] {
         },
       ],
     })
+    match = urlRegex.exec(text)
   }
 
-  while ((match = tagRegex.exec(text)) !== null) {
+  match = tagRegex.exec(text)
+  while (match !== null) {
     const utf16Index = match.index
     const byteStart = encoder.encode(text.slice(0, utf16Index)).length
     const byteEnd = byteStart + encoder.encode(match[0]).length
@@ -520,6 +531,7 @@ export function oldGetFacetsFromText(text: string): Main[] {
         },
       ],
     })
+    match = tagRegex.exec(text)
   }
 
   return facets

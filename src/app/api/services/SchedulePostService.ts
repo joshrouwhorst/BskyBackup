@@ -2,6 +2,7 @@ import {
   ScheduleFrequency,
   Schedule,
   CreateScheduleRequest,
+  ScheduleLookups,
 } from '@/types/scheduler'
 import { getAppData, saveAppData } from '@/app/api/helpers/appData'
 import {
@@ -35,9 +36,33 @@ async function updateScheduleData(data: Partial<ScheduleData>): Promise<void> {
   const updatedData = {
     ...appData,
     ...data,
-    lastBackup: new Date().toISOString(),
   }
   await saveAppData(updatedData)
+}
+
+function cleanFrequency(frequency: ScheduleFrequency): ScheduleFrequency {
+  const cleanedFrequency = { ...frequency }
+
+  switch (cleanedFrequency.interval.unit) {
+    case 'minutes':
+    case 'hours':
+      cleanedFrequency.timeOfDay = undefined
+      cleanedFrequency.dayOfWeek = undefined
+      cleanedFrequency.dayOfMonth = undefined
+      break
+    case 'days':
+      cleanedFrequency.dayOfWeek = undefined
+      cleanedFrequency.dayOfMonth = undefined
+      break
+    case 'weeks':
+      cleanedFrequency.dayOfMonth = undefined
+      break
+    case 'months':
+      cleanedFrequency.dayOfWeek = undefined
+      break
+  }
+
+  return cleanedFrequency
 }
 
 export async function createSchedule(
@@ -48,7 +73,7 @@ export async function createSchedule(
   const schedule: Schedule = {
     id: `schedule-${Date.now()}`,
     name: request.name,
-    frequency: request.frequency,
+    frequency: cleanFrequency(request.frequency),
     isActive: request.isActive ?? true,
     createdAt: new Date().toISOString(),
     platforms: request.platforms,
@@ -74,6 +99,10 @@ export async function updateSchedule(
   }
 
   const updatedSchedule = { ...schedules[scheduleIndex], ...updates }
+
+  if (updates.frequency) {
+    updatedSchedule.frequency = cleanFrequency(updates.frequency)
+  }
 
   schedules[scheduleIndex] = updatedSchedule
   await updateScheduleData({ schedules })
@@ -131,6 +160,22 @@ export async function getSchedulePosts(
   return posts
     .filter((p) => p.group === schedule.group)
     .sort((a, b) => a.meta.priority - b.meta.priority)
+}
+
+export async function getScheduleLookups(
+  scheduleId: string
+): Promise<ScheduleLookups> {
+  const nextPost = await getNextPost(scheduleId)
+  let nextPostDate: Date | null = null
+  const schedules = await getSchedules()
+  const schedule = schedules.find((s) => s.id === scheduleId)
+  if (schedule?.isActive) {
+    nextPostDate = getNextTriggerTime(
+      schedule.lastTriggered ? new Date(schedule.lastTriggered) : null,
+      schedule.frequency
+    )
+  }
+  return { nextPost, nextPostDate }
 }
 
 export async function getNextPost(

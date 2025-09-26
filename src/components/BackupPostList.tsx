@@ -5,6 +5,9 @@ import PostList from "@/components/PostList";
 import { useBskyBackupContext } from "@/providers/BskyBackupProvider";
 
 export default function BackupPostList() {
+  // TODO: Add a button to start a backup if there are no posts
+  // and show some info about how to use the backup feature
+
   return (
     <PostList context={useBskyBackupContext}>
       <div className="flex flex-col items-center justify-center py-16 text-center text-gray-500">

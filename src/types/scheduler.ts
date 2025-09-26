@@ -1,5 +1,7 @@
 // Scheduling System Types
 
+import { DraftPost } from './drafts'
+
 export interface Schedule {
   id?: string
   cronId?: string
@@ -34,4 +36,9 @@ export interface CreateScheduleRequest {
   platforms: SocialPlatform[]
   isActive?: boolean
   group: string
+}
+
+export interface ScheduleLookups {
+  nextPost?: DraftPost | null
+  nextPostDate?: Date | null
 }

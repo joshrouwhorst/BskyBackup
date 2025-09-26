@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
-import { BACKUP_PATH, BACKUP_MEDIA_PATH } from '@/config/main'
+import { BACKUP_PATH, BACKUP_MEDIA_PATH } from '@/config/api'
 
 export async function GET(
   request: NextRequest,

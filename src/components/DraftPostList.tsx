@@ -17,14 +17,6 @@ export default function DraftPostList() {
           </p>
         </div>
       </PostList>
-      <LinkButton
-        variant="primary"
-        size="sm"
-        href="/drafts/create"
-        className="absolute top-0 right-0 z-10"
-      >
-        <Plus /> Create Draft
-      </LinkButton>
     </div>
   );
 }

@@ -1,6 +1,9 @@
-# Bluesky Backup Viewer
+# BskyBackup - Local backup, drafts & scheduling for Bluesky
 
-A Next.js application for viewing and managing your Bluesky social media backup data locally.
+TODO: setup screenshot
+![Screenshot of BskyBackup](https://github.com/)
+
+A Next.js application for viewing and managing your Bluesky social media backup data, create draft posts, and schedule them to be published, all **local** and **private**.
 
 ## Project Overview
 

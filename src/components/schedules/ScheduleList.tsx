@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import React from 'react'
-import { Schedule } from '@/types/scheduler'
-import ScheduleView from './ScheduleView'
-import { useScheduleContext } from '@/providers/ScheduleProvider'
+import React from "react";
+import { Schedule } from "@/types/scheduler";
+import ScheduleListItem from "./ScheduleView";
+import { useScheduleContext } from "@/providers/ScheduleProvider";
 
 export default function ScheduleList({
   onEdit,
@@ -12,13 +12,13 @@ export default function ScheduleList({
   selectedSchedule,
   setSelectedSchedule,
 }: {
-  onEdit: (schedule: Schedule) => void
-  onDelete: (id: string) => void
-  onCreateNew: () => void
-  selectedSchedule: Schedule | null
-  setSelectedSchedule: (schedule: Schedule | null) => void
+  onEdit: (schedule: Schedule) => void;
+  onDelete: (id: string) => void;
+  onCreateNew: () => void;
+  selectedSchedule: Schedule | null;
+  setSelectedSchedule: (schedule: Schedule | null) => void;
 }) {
-  const { schedules } = useScheduleContext()
+  const { schedules } = useScheduleContext();
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -40,12 +40,12 @@ export default function ScheduleList({
             key={schedule.id}
             className={`p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
               selectedSchedule?.id === schedule.id
-                ? 'bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-500'
-                : ''
+                ? "bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-500"
+                : ""
             }`}
             onClick={() => setSelectedSchedule(schedule)}
           >
-            <ScheduleView
+            <ScheduleListItem
               key={schedule.id}
               schedule={schedule}
               onEdit={onEdit}
@@ -55,5 +55,5 @@ export default function ScheduleList({
         ))}
       </div>
     </div>
-  )
+  );
 }
