@@ -1,4 +1,4 @@
-![Screenshot of BskyBackup](https://github.com/joshrouwhorst/BskyBackup/blob/main/public/screenshot.png?raw=true)
+![Screenshot of BskyBackup](https://github.com/joshrouwhorst/BskyBackup/blob/main/public/app-screenshot.png?raw=true)
 
 # BskyBackup
 
