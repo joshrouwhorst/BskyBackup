@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server'
-import { DraftPost } from '@/types/drafts'
+import { NextRequest, NextResponse } from 'next/server'
+import type { DraftPost } from '@/types/drafts'
 import {
   deleteDraftPost,
   getDraftPost,
@@ -9,11 +9,11 @@ import {
 } from '../../services/DraftPostService'
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id?: string }> }
 ) {
+  const { id } = await params
   try {
-    const { id } = await params
     if (!id) {
       return NextResponse.json(
         { error: 'Post ID is required' },
@@ -28,21 +28,19 @@ export async function GET(
   } catch (error) {
     return NextResponse.json(
       {
-        error: params?.id ? 'Failed to fetch post' : 'Failed to fetch app data',
+        error: id ? 'Failed to fetch post' : 'Failed to fetch app data',
       },
       { status: 500 }
     )
   }
 }
 
-// Duplicate post if ?duplicate=true is set
-// Publish post if ?publish=true is set
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id?: string }> }
 ) {
+  const { id } = await params
   try {
-    const { id } = await params
     const url = new URL(request.url)
     const duplicate = url.searchParams.get('duplicate')
     const publish = url.searchParams.get('publish')
@@ -53,7 +51,6 @@ export async function POST(
       )
     }
 
-    // Check for duplicate param
     if (duplicate === 'true') {
       const duplicatedPost = await duplicateDraftPost(id)
       return NextResponse.json(duplicatedPost, { status: 201 })
@@ -76,10 +73,10 @@ export async function POST(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id?: string }> }
 ) {
+  const { id } = await params
   try {
-    const { id } = await params
     if (!id) {
       return NextResponse.json(
         { error: 'Post ID is required' },
@@ -99,10 +96,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id?: string }> }
 ) {
+  const { id } = await params
   try {
-    const { id } = await params
     if (!id) {
       return NextResponse.json(
         { error: 'Post ID is required' },

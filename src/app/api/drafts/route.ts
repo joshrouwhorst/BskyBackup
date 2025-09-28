@@ -10,13 +10,12 @@ import {
 } from '@/app/api/services/DraftPostService'
 import type { CreateDraftInput } from '@/types/drafts'
 
-export async function GET(request: Request, ctx: { params: { id: string } }) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id?: string }> }
+) {
   try {
-    let id = null
-    if (ctx?.params) {
-      id = await ctx.params.id
-    }
-
+    const { id } = await params
     const { searchParams } = new URL(request.url)
     const group = searchParams.get('group') || undefined
     if (id) {
@@ -63,11 +62,19 @@ export async function POST(request: Request) {
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id?: string }> }
 ) {
   try {
     const input: CreateDraftInput = await request.json()
-    const updatedPost = await updateDraftPost(params.id, input)
+    const { id } = await params
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Post ID is required' },
+        { status: 400 }
+      )
+    }
+
+    const updatedPost = await updateDraftPost(id, input)
     return NextResponse.json(updatedPost)
   } catch (error) {
     return NextResponse.json(

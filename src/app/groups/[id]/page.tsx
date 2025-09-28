@@ -4,7 +4,7 @@ import ReorderGroupPosts from "../../../components/ReorderGroupPosts";
 export default async function GroupPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
 

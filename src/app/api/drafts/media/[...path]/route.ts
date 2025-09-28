@@ -5,7 +5,7 @@ import { DRAFT_POSTS_PATH } from '@/config/api'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
     const resolvedParams = await params
@@ -62,7 +62,7 @@ function getContentType(ext: string): string {
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
     const resolvedParams = await params

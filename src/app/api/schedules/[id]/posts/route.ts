@@ -9,8 +9,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = await params
-    const lookups = await getScheduleLookups(resolvedParams.id)
+    const { id } = await params
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Schedule ID is required' },
+        { status: 400 }
+      )
+    }
+    const lookups = await getScheduleLookups(id)
     if (!lookups) {
       return NextResponse.json(
         { error: 'No scheduled lookups found' },
@@ -31,9 +37,16 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = await params
+    const { id } = await params
 
-    await publishNextPost(resolvedParams.id)
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Schedule ID is required' },
+        { status: 400 }
+      )
+    }
+
+    await publishNextPost(id)
 
     return NextResponse.json({
       message: 'Schedule triggered successfully',

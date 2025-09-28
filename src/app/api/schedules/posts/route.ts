@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import {
-  sendToSocialPlatform,
-  getDraftPost,
-} from '../../services/DraftPostService'
-import { SUPPORTED_SOCIAL_PLATFORMS } from '@/config/main'
+import { publishDraftPost } from '../../services/DraftPostService'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,13 +10,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    const post = await getDraftPost(id)
-    if (!post) {
-      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
-    }
-    for (const platform of SUPPORTED_SOCIAL_PLATFORMS) {
-      await sendToSocialPlatform(post, platform)
-    }
+
+    await publishDraftPost(id)
     return NextResponse.json(
       { message: 'Post sent to all supported platforms' },
       { status: 200 }

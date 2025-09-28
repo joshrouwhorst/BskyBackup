@@ -5,7 +5,7 @@ import { Callout } from "@/components/ui/callout";
 export default async function UpdateDraft({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
   return (

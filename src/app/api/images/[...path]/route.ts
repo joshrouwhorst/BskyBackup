@@ -5,7 +5,7 @@ import { BACKUP_PATH, BACKUP_MEDIA_PATH } from '@/config/api'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
     const resolvedParams = await params
