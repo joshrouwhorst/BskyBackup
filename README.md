@@ -27,13 +27,25 @@ This app reads your Bluesky backup files and displays them in a clean, browseabl
 
 Make sure your `.env` file in the root of the project has this variable:
 
-```
+```txt
 APP_DATA_ENCRYPTION_KEY='your value here'
 ```
 
 APP_DATA_ENCRYPTION_KEY is an encryption key for encoding settings including social media credentials for the app. For maximum security it should be 32 characters long.
 
-Run `bun dev` to start development server
+You can use [Bun](https://bun.sh/) runtime, or [npm](https://www.npmjs.com/) should work as well.
+
+Install dependencies:
+
+```shell
+bun i
+```
+
+Run the development server:
+
+```shell
+bun dev
+```
 
 Open [https://localhost:3000](https://localhost:3000) in your browser.
 
@@ -42,6 +54,26 @@ You should be redirected to [https://localhost:3000/settings](https://localhost:
 ### Bluesky Credentials
 
 I recommend setting up an app password specifically for this. On the Bluesky app you can go to Settings -> Privacy & Security -> App passwords to generate one. There is no need to enable direct messages access at this time.
+
+# Unit Testing
+
+This project does not include a formal automated test suite, but you can run unit tests manually using Jest. To run the tests:
+
+Make sure you have all dependencies installed:
+
+```sh
+bun install
+```
+
+Run the tests with:
+
+```sh
+bun test
+```
+
+Test files are located alongside source files, typically in `__tests__` directories (e.g., `src/app/api/helpers/__tests__/`).
+
+If you add new features, consider adding or updating test files to cover your changes. For more information on Jest configuration, see `jest.config.ts`.
 
 ## Important File Locations
 
