@@ -75,6 +75,16 @@ Test files are located alongside source files, typically in `__tests__` director
 
 If you add new features, consider adding or updating test files to cover your changes. For more information on Jest configuration, see `jest.config.ts`.
 
+## Docker
+
+```shell
+docker build -t bsky-backup:latest .
+```
+
+```shell
+docker run -d --name bsky-backup -p 3000:3000 bsky-backup:latest
+```
+
 ## Important File Locations
 
 ### Configuration

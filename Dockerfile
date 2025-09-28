@@ -7,7 +7,6 @@ RUN npm ci --omit=dev
 FROM node:20 AS builder
 WORKDIR /app
 COPY . .
-RUN npm ci
 RUN npm install --os=linux --cpu=arm64 sharp
 RUN npm run lint || true
 RUN npm rebuild
