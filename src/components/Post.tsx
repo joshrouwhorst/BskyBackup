@@ -97,7 +97,7 @@ function getDisplayDataFromDraft(draftPost: DraftPost): PostDisplayData {
           size: draftPost.meta.video.size,
         }
       : undefined,
-    draftId: draftPost.meta.id,
+    draftId: draftPost.meta.directoryName,
     group: draftPost.group,
   } as PostDisplayData;
 }
@@ -202,7 +202,8 @@ export default function Post({
   const handleDuplicateDraft = async (post: PostDisplayData) => {
     if (post.draftId) {
       const newPost = await duplicateDraft(post.draftId);
-      if (newPost) window.location.href = `/drafts/${newPost.meta.id}`;
+      if (newPost)
+        window.location.href = `/drafts/${newPost.meta.directoryName}`;
     }
   };
 

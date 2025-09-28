@@ -30,7 +30,7 @@ export function Callout({
   return (
     <div
       className={joinClasses(
-        "border-l-4 p-4 rounded-md",
+        "border p-4 rounded-md",
         variantStyles[variant],
         className,
       )}

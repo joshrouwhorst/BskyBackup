@@ -61,7 +61,10 @@ export default function ReorderGroupPosts({ group }: ReorderGroupPostsProps) {
           .map((post, idx) => {
             if (!post) return null;
             return (
-              <li key={post.meta.id} className="flex items-center gap-2 py-1">
+              <li
+                key={post.meta.directoryName}
+                className="flex items-center gap-2 py-1"
+              >
                 <div className="font-mono text-xs text-gray-500">
                   <div className="text-right text-2xl">{idx + 1}</div>
                   <div className="flex flex-row gap-1 justify-between">
@@ -71,7 +74,7 @@ export default function ReorderGroupPosts({ group }: ReorderGroupPostsProps) {
                       title="Move Up"
                       onClick={() => {
                         if (idx <= 0) return;
-                        const newOrder = posts.map((p) => p.meta.id);
+                        const newOrder = posts.map((p) => p.meta.directoryName);
                         [newOrder[idx - 1], newOrder[idx]] = [
                           newOrder[idx],
                           newOrder[idx - 1],
@@ -88,7 +91,7 @@ export default function ReorderGroupPosts({ group }: ReorderGroupPostsProps) {
                       color="secondary"
                       title="Move Down"
                       onClick={() => {
-                        const order = posts.map((p) => p.meta.id);
+                        const order = posts.map((p) => p.meta.directoryName);
                         if (idx >= order.length - 1) return;
                         const newOrder = [...order];
                         [newOrder[idx + 1], newOrder[idx]] = [
@@ -107,7 +110,7 @@ export default function ReorderGroupPosts({ group }: ReorderGroupPostsProps) {
                       variant="icon"
                       color="primary"
                       title="Edit Post"
-                      href={`/drafts/${post.meta.id}`}
+                      href={`/drafts/${post.meta.directoryName}`}
                     >
                       <Edit />
                     </LinkButton>

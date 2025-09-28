@@ -1,23 +1,32 @@
-import React, { useEffect, useState } from 'react'
-import { useGroups } from '@/hooks/useGroups'
-import { Select } from './ui/forms'
+import React, { useEffect, useState } from "react";
+import { useGroups } from "@/hooks/useGroups";
+import { Select } from "./ui/forms";
+import { DEFAULT_GROUP } from "@/config/frontend";
 
 interface GroupSelectProps {
-  value?: string
-  onChange: (group: string) => void
+  value?: string;
+  includeDefault?: boolean;
+  onChange: (group: string) => void;
 }
 
-export function GroupSelect({ value, onChange }: GroupSelectProps) {
-  const [groups, setGroups] = useState<string[]>([])
-  const { fetchGroups } = useGroups()
+export function GroupSelect({
+  value,
+  includeDefault = true,
+  onChange,
+}: GroupSelectProps) {
+  const [groups, setGroups] = useState<string[]>([]);
+  const { fetchGroups } = useGroups();
 
   useEffect(() => {
     const getGroups = async () => {
-      const data = await fetchGroups()
-      setGroups(data)
-    }
-    getGroups()
-  }, [fetchGroups])
+      const data = await fetchGroups();
+      if (!includeDefault && data.includes(DEFAULT_GROUP)) {
+        data.splice(data.indexOf(DEFAULT_GROUP), 1);
+      }
+      setGroups(data);
+    };
+    getGroups();
+  }, [fetchGroups, includeDefault]);
 
   return (
     <Select
@@ -33,5 +42,5 @@ export function GroupSelect({ value, onChange }: GroupSelectProps) {
         </Select.Option>
       ))}
     </Select>
-  )
+  );
 }

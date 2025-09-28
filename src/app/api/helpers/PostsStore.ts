@@ -11,24 +11,51 @@ import type {
 } from '@/types/drafts'
 import sharp from 'sharp'
 import {
-  DEFAULT_GROUP,
   DRAFT_MEDIA_ENDPOINT,
   PUBLISHED_POSTS_PATH,
+  DEFAULT_GROUP,
+  DEFAULT_POST_SLUG,
 } from '@/config/api'
 import Logger from './logger'
+import { Governor } from './governor'
 
 const META_FILENAME = 'meta.json'
 const TEXT_FILENAME = 'post.txt'
 const MEDIA_DIRNAME = 'media'
 
 const logger = new Logger('PostsStore')
-
-function genId() {
-  return crypto.randomBytes(8).toString('hex')
-}
+const governor = new Governor(1000) // Just to make sure we don't accidentally do too much at once
 
 function extFromFilename(filename: string) {
   return path.extname(filename) || ''
+}
+
+function generateDirPath({
+  createdAt,
+  root,
+  slug,
+  group,
+}: {
+  createdAt: string
+  root: string
+  slug?: string
+  group?: string
+}): { directoryName: string; slug: string; fullPath: string } {
+  const newSlug = slug ? safeName(slug) : safeName(DEFAULT_POST_SLUG)
+  // Format createdAt as YYYYMMDDHHmmss
+  const date = new Date(createdAt)
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  const formattedDate = [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join('')
+  const directoryName = `${formattedDate}_${newSlug}`
+  const dirItems = group ? [root, group, directoryName] : [root, directoryName]
+  return { directoryName, slug: newSlug, fullPath: path.join(...dirItems) }
 }
 
 export class PostsStore {
@@ -45,8 +72,8 @@ export class PostsStore {
     await fs.writeFile(filePath, data)
   }
 
-  private async writeMeta(dir: string, meta: DraftMeta) {
-    const p = path.join(dir, META_FILENAME)
+  private async writeMeta(directoryPath: string, meta: DraftMeta) {
+    const p = path.join(directoryPath, META_FILENAME)
     await fs.writeFile(p, JSON.stringify(meta, null, 2), 'utf8')
   }
 
@@ -64,6 +91,24 @@ export class PostsStore {
     }
   }
 
+  // For when the shape of DraftPost or DraftMeta changes
+  async migratePostStructures(): Promise<void> {
+    const posts = await this.listPosts()
+    for (const post of posts) {
+      const { directoryName, slug, fullPath } = generateDirPath({
+        createdAt: post.meta.createdAt,
+        root: this.root,
+        slug: post.meta.slug,
+        group: post.group,
+      })
+      await this.updatePostDirectoryName(post.dir, fullPath)
+      post.meta.directoryName = directoryName
+      post.meta.slug = slug
+      post.dir = fullPath
+      await this.writeMeta(post.dir, post.meta)
+    }
+  }
+
   async createPost(input: CreateDraftInput): Promise<DraftPost> {
     const text = input.text || ''
     const inputImages = input.images ?? []
@@ -73,22 +118,25 @@ export class PostsStore {
       throw new Error("video kind must be 'video'")
     }
 
-    const rand = genId()
-
     if (!input.group) {
       input.group = DEFAULT_GROUP
     }
 
     // choose id and directory names
     const createdAt = input.createdAt ?? new Date().toISOString()
-    const id = input.id
-      ? safeName(input.id)
-      : `${createdAt.replace(/[:.]/g, '-')}_${rand}`
-    const dirItems = input.group
-      ? [this.root, input.group, id]
-      : [this.root, id]
 
-    const postDir = path.join(...dirItems)
+    const {
+      directoryName,
+      slug,
+      fullPath: postDir,
+    } = generateDirPath({
+      createdAt,
+      root: this.root,
+      slug: input.slug,
+      group: input.group,
+    })
+    input.slug = slug
+
     const mediaDir = path.join(postDir, MEDIA_DIRNAME)
 
     await ensureDir(mediaDir)
@@ -121,7 +169,8 @@ export class PostsStore {
     const { images, video } = await this.readMedia(postDir)
 
     const meta: DraftMeta = {
-      id,
+      directoryName,
+      slug: input.slug,
       createdAt,
       mediaDir: MEDIA_DIRNAME,
       images: images || [],
@@ -134,7 +183,9 @@ export class PostsStore {
 
     // Return post with text loaded from file
     const postText = await this.readText(postDir)
-    logger.log(`Created draft post ${id} in ${input.group || 'no group'}.`)
+    logger.log(
+      `Created draft post ${directoryName} in ${input.group || 'no group'}.`
+    )
     return {
       dir: postDir,
       meta: { ...meta, text: postText },
@@ -143,13 +194,33 @@ export class PostsStore {
   }
 
   async updatePost(
-    id: string,
+    directoryName: string,
     input: CreateDraftInput
   ): Promise<DraftPost | null> {
-    logger.log(`Updating draft post ${id}.`)
+    logger.log(`Updating draft post ${directoryName}.`)
     const posts = await this.listPosts()
-    const post = posts.find((p) => p.meta.id === id)
-    if (!post) throw new Error('Post not found')
+    const post = posts.find((p) => p.meta.directoryName === directoryName)
+    if (!post) throw new Error('Cannot find post to update')
+
+    // If the id is changing, we need to rename the directory
+    if (post.meta.slug !== input.slug) {
+      const {
+        directoryName: newDirectoryName,
+        slug,
+        fullPath,
+      } = generateDirPath({
+        createdAt: post.meta.createdAt,
+        root: this.root,
+        slug: input.slug,
+        group: input.group,
+      })
+      await this.updatePostDirectoryName(post.dir, fullPath)
+      //await wait(2000)
+      input.slug = slug
+      post.meta.slug = slug
+      post.dir = fullPath
+      post.meta.directoryName = newDirectoryName
+    }
 
     // Update text file if text is provided
     if (input.text !== undefined) {
@@ -167,7 +238,7 @@ export class PostsStore {
 
     if (post.group !== input.group) {
       logger.log(
-        `Moving draft post ${id} from group ${post.group} to ${input.group}.`
+        `Moving draft post ${directoryName} from group ${post.group} to ${input.group}.`
       )
       await this.movePostToGroup(post, input.group || DEFAULT_GROUP)
     }
@@ -191,7 +262,9 @@ export class PostsStore {
       await this.addVideo(input.video, mediaPath)
     }
 
-    return await this.readPostDir(id, post.group)
+    await this.writeMeta(post.dir, post.meta)
+
+    return await this.readPostDir(post.meta.directoryName, post.group)
   }
 
   async readPostDir(
@@ -226,6 +299,14 @@ export class PostsStore {
       )
       return null
     }
+  }
+
+  async updatePostDirectoryName(
+    oldPath: string,
+    newPath: string
+  ): Promise<void> {
+    logger.log(`Updating directory name for post ${oldPath} to ${newPath}.`)
+    await fs.rename(oldPath, newPath)
   }
 
   async readMedia(postDir: string): Promise<{
@@ -405,20 +486,26 @@ export class PostsStore {
   }
 
   async deletePost(post: DraftPost): Promise<void> {
-    logger.log(`Deleting draft post ${post.meta.id}.`)
+    logger.log(`Deleting draft post ${post.meta.directoryName}.`)
     await fs.rm(post.dir, { recursive: true, force: true })
   }
 
   async duplicatePost(post: DraftPost): Promise<DraftPost> {
-    logger.log(`Duplicating draft post ${post.meta.id}.`)
-    const rand = genId()
+    logger.log(`Duplicating draft post ${post.meta.directoryName}.`)
     const createdAt = new Date().toISOString()
-    const newId = `${createdAt.replace(/[:.]/g, '-')}_${rand}`
-    const newDirItems = post.group
-      ? [this.root, post.group, newId]
-      : [this.root, newId]
-    const newDir = path.join(...newDirItems)
-    await ensureDir(newDir)
+
+    const {
+      directoryName: newDirectoryName,
+      slug,
+      fullPath,
+    } = generateDirPath({
+      createdAt,
+      root: this.root,
+      slug: post.meta.slug,
+      group: post.group,
+    })
+
+    await ensureDir(fullPath)
 
     // Copy all files and subdirectories from old dir to new dir, except 'media'
     async function copyRecursive(src: string, dest: string) {
@@ -438,25 +525,28 @@ export class PostsStore {
         }
       }
     }
-    await copyRecursive(post.dir, newDir)
+    await copyRecursive(post.dir, fullPath)
 
     // Update meta.json with new id and createdAt
-    const metaPath = path.join(newDir, META_FILENAME)
+    const metaPath = path.join(fullPath, META_FILENAME)
     const metaRaw = await fs.readFile(metaPath, 'utf8')
-    const meta = JSON.parse(metaRaw)
-    meta.id = newId
+    const meta: DraftMeta = JSON.parse(metaRaw)
+    meta.directoryName = newDirectoryName
+    meta.slug = slug
     meta.createdAt = createdAt
     await fs.writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf8')
 
     // Load duplicated post
-    const duplicated = await this.readPostDir(newId, post.group)
+    const duplicated = await this.readPostDir(newDirectoryName, post.group)
     if (!duplicated) throw new Error('Failed to duplicate post')
     duplicated.group = post.group
     return duplicated
   }
 
   async movePostToGroup(post: DraftPost, newGroup: string): Promise<DraftPost> {
-    logger.log(`Moving draft post ${post.meta.id} to group ${newGroup}.`)
+    logger.log(
+      `Moving draft post ${post.meta.directoryName} to group ${newGroup}.`
+    )
     const groupDir = path.join(this.root, newGroup)
     await ensureDir(groupDir)
 
@@ -484,7 +574,7 @@ export class PostsStore {
       }
       const order = posts
         .sort((a, b) => (a.meta.priority < b.meta.priority ? 1 : -1))
-        .map((p) => p.meta.id)
+        .map((p) => p.meta.directoryName)
       return order
     } catch (err) {
       return []
@@ -493,7 +583,7 @@ export class PostsStore {
 
   async setGroupOrder(group: string, order: string[]): Promise<void> {
     const posts = await this.listPostsInGroup(group)
-    const postMap = new Map(posts.map((p) => [p.meta.id, p]))
+    const postMap = new Map(posts.map((p) => [p.meta.directoryName, p]))
     for (let i = 0; i < order.length; i++) {
       const post = postMap.get(order[i])
       if (post) {
@@ -505,7 +595,9 @@ export class PostsStore {
   }
 
   async removePostFromGroup(post: DraftPost): Promise<DraftPost> {
-    logger.log(`Removing draft post ${post.meta.id} from ${post.group}.`)
+    logger.log(
+      `Removing draft post ${post.meta.directoryName} from ${post.group}.`
+    )
     const baseName = path.basename(post.dir)
     const newDir = path.join(this.root, DEFAULT_GROUP, baseName)
 
@@ -516,7 +608,7 @@ export class PostsStore {
   }
 
   async movePost(post: DraftPost, newPath: string): Promise<DraftPost> {
-    logger.log(`Moving draft post ${post.meta.id} to ${newPath}.`)
+    logger.log(`Moving draft post ${post.meta.directoryName} to ${newPath}.`)
     await ensureDir(path.dirname(newPath))
     await fs.rename(post.dir, newPath)
     post.dir = newPath
@@ -532,7 +624,7 @@ export class PostsStore {
   }
 
   async movePostToPublished(post: DraftPost): Promise<DraftPost> {
-    logger.log(`Publishing draft post ${post.meta.id}.`)
+    logger.log(`Publishing draft post ${post.meta.directoryName}.`)
     await ensureDir(PUBLISHED_POSTS_PATH)
     const newDir = path.join(
       PUBLISHED_POSTS_PATH,

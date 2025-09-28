@@ -1,3 +1,4 @@
+export const DEFAULT_GROUP = 'default' // in all 3 config files
 export const DRAFT_MEDIA_ENDPOINT = '/api/drafts/media'
 export const BACKUP_MEDIA_ENDPOINT = '/api/backup/images'
 

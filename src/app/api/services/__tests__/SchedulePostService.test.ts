@@ -183,7 +183,7 @@ describe('publishNextPost', () => {
       schedules: [schedule],
     })
     ;(draftPostService.getDraftPostsInGroup as jest.Mock).mockResolvedValue([
-      { meta: { id: 'post1', priority: 1 }, group: 'group1' },
+      { meta: { directoryName: 'post1', priority: 1 }, group: 'group1' },
     ])
     ;(draftPostService.publishDraftPost as jest.Mock).mockResolvedValue(
       undefined
@@ -213,11 +213,11 @@ describe('publishNextPost', () => {
       schedules: [schedule],
     })
     ;(draftPostService.getDraftPostsInGroup as jest.Mock).mockResolvedValue([
-      { meta: { id: 'post3', priority: 3 }, group: 'group1' },
-      { meta: { id: 'post2', priority: 2 }, group: 'group1' },
-      { meta: { id: 'post1', priority: 1 }, group: 'group1' },
-      { meta: { id: 'post4', priority: 4 }, group: 'group1' },
-      { meta: { id: 'post5', priority: -1 }, group: 'group1' },
+      { meta: { directoryName: 'post2', priority: 2 }, group: 'group1' },
+      { meta: { directoryName: 'post3', priority: 3 }, group: 'group1' },
+      { meta: { directoryName: 'post1', priority: 1 }, group: 'group1' },
+      { meta: { directoryName: 'post4', priority: 4 }, group: 'group1' },
+      { meta: { directoryName: 'post5', priority: -1 }, group: 'group1' },
     ])
     ;(draftPostService.publishDraftPost as jest.Mock).mockResolvedValue(
       undefined

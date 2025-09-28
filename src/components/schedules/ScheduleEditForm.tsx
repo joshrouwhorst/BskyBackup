@@ -73,6 +73,7 @@ export default function ScheduleEditForm({
           <Label htmlFor="group">Group</Label>
           <GroupSelect
             value={editForm.group}
+            includeDefault={false}
             onChange={(group) => {
               setEditForm((prev) => ({
                 ...prev,

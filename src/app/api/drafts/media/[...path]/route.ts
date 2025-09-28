@@ -59,3 +59,34 @@ function getContentType(ext: string): string {
       return 'image/jpeg'
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { path: string[] } }
+) {
+  try {
+    const resolvedParams = await params
+    const imagePath = path.join(DRAFT_POSTS_PATH, ...resolvedParams.path)
+
+    // Security check: ensure the path is within DRAFT_POSTS_PATH
+    const resolvedPath = path.resolve(imagePath)
+    const resolvedDraftPath = path.resolve(DRAFT_POSTS_PATH)
+
+    if (!resolvedPath.startsWith(resolvedDraftPath)) {
+      return new NextResponse('Forbidden', { status: 403 })
+    }
+
+    // Check if file exists
+    if (!fs.existsSync(resolvedPath)) {
+      return new NextResponse('Image not found', { status: 404 })
+    }
+
+    // Delete the file
+    fs.unlinkSync(resolvedPath)
+
+    return new NextResponse('Media deleted', { status: 200 })
+  } catch (error) {
+    console.error('Error serving image:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
+  }
+}

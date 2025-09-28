@@ -47,11 +47,17 @@ export default function PostList({ children, context }: PostListProps) {
             <Post postData={post} />
           </li>
         ))}
-        {drafts?.map((draft) => (
-          <li key={draft.meta?.id} className="w-full max-w-2xl mb-4">
-            <Post draftPost={draft} />
-          </li>
-        ))}
+        {drafts?.map((draft) => {
+          console.log("Rendering draft:", draft);
+          return (
+            <li
+              key={draft.meta?.directoryName}
+              className="w-full max-w-2xl mb-4"
+            >
+              <Post draftPost={draft} />
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

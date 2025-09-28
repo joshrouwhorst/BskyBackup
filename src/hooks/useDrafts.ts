@@ -13,6 +13,7 @@ interface DraftHookContext {
   deleteDraft: (id: string) => Promise<void>
   duplicateDraft: (id: string) => Promise<DraftPost>
   publishDraft: (id: string) => Promise<DraftPost>
+  deleteMediaFromDraft: (mediaFileUrl: string) => Promise<void>
 }
 
 export function useDrafts(): DraftHookContext {
@@ -152,6 +153,19 @@ export function useDrafts(): DraftHookContext {
     }
   }, [])
 
+  const deleteMediaFromDraft = useCallback(async (mediaFileUrl: string) => {
+    try {
+      const response = await fetch(mediaFileUrl, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        throw new Error('Failed to delete media from draft')
+      }
+    } catch (error) {
+      throw error
+    }
+  }, [])
+
   return {
     fetchDrafts,
     createDraft,
@@ -161,5 +175,6 @@ export function useDrafts(): DraftHookContext {
     deleteDraft,
     duplicateDraft,
     publishDraft,
+    deleteMediaFromDraft,
   }
 }

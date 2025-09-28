@@ -151,8 +151,13 @@ src/
 
 ## Future Enhancements
 
-- [ ] Advanced filtering UI
+- [ ] Reposting deleted posts
+  - [ ] Repost to previous datetime
+  - [ ] Repost as new post. Duplicate?
+- [ ] Advanced filtering for backup and drafts
 - [ ] Post search functionality
 - [ ] Export options
 - [ ] Statistics dashboard
 - [ ] Automated backup scheduling
+- [ ] Multiple accounts
+- [ ] Mastodon support

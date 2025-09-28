@@ -138,7 +138,7 @@ export async function reorderSchedulePosts(
     throw new Error('New order length does not match number of scheduled posts')
   }
 
-  const idSet = new Set(postsToReorder.map((p) => p.meta.id))
+  const idSet = new Set(postsToReorder.map((p) => p.meta.directoryName))
   for (const id of newOrder) {
     if (!idSet.has(id)) {
       throw new Error(`Post ID ${id} is not part of the scheduled posts`)
@@ -236,7 +236,9 @@ export async function publishNextPost(scheduleId: string): Promise<void> {
 
   logger.log(`Schedule ${scheduleId} found: ${schedule.name}`)
 
-  logger.log(`Next post for schedule ${schedule.name} is ${post.meta.id}.`)
+  logger.log(
+    `Next post for schedule ${schedule.name} is ${post.meta.directoryName}.`
+  )
 
   // Just send to bluesky if no platforms specified
   if (!schedule.platforms || schedule.platforms.length === 0) {
@@ -244,16 +246,18 @@ export async function publishNextPost(scheduleId: string): Promise<void> {
   }
 
   try {
-    logger.log(`Posting ${post.meta.id} for schedule ${schedule.name}`)
-    await publishDraftPost(post.meta.id, schedule.platforms)
+    logger.log(
+      `Posting ${post.meta.directoryName} for schedule ${schedule.name}`
+    )
+    await publishDraftPost(post.meta.directoryName, schedule.platforms)
   } catch (error) {
     logger.error(
-      `Failed to publish ${post.meta.id} for schedule ${schedule.name}:`,
+      `Failed to publish ${post.meta.directoryName} for schedule ${schedule.name}:`,
       error
     )
   }
 
-  logger.log(`Successfully posted draft ${post.meta.id}`)
+  logger.log(`Successfully posted draft ${post.meta.directoryName}`)
   await updateScheduleData({ schedules })
   logger.closing('Publish Next Post Process')
   return

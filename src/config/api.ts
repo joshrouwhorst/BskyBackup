@@ -1,5 +1,8 @@
 import { getSettings } from '../app/api/services/SettingsService'
 const settings = await getSettings()
+
+export const DEFAULT_GROUP = 'default' // in all 3 config files
+export const DEFAULT_POST_SLUG = 'draft'
 export const BSKY_DISPLAY_NAME = settings?.bskyDisplayName || ''
 export const BSKY_IDENTIFIER = settings?.bskyIdentifier || ''
 export const BSKY_PASSWORD = settings?.bskyPassword || ''
@@ -31,4 +34,3 @@ export const HEADER_NAV_ITEMS = [
 ]
 
 export const CRON_FREQUENCY_MINUTES = 5 // how often to check for scheduled posts
-export const DEFAULT_GROUP = 'default' // default group identifier

@@ -46,7 +46,7 @@ export default function SettingsForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 bg-color-blue-200 dark:bg-blue-950 p-6 rounded-lg"
+      className="space-y-6 bg-color-gray-200 dark:bg-gray-900 p-6 rounded-lg"
     >
       <div className="grid grid-cols-2 gap-4">
         <SettingsField

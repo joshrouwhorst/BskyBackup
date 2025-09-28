@@ -1,5 +1,6 @@
 import React from "react";
 import { CreateDraftForm } from "@/components/CreateDraftForm";
+import { Callout } from "@/components/ui/callout";
 
 export default async function UpdateDraft({
   params,
@@ -8,9 +9,9 @@ export default async function UpdateDraft({
 }) {
   const { id } = await params;
   return (
-    <div className="flex flex-row justify-center">
-      <div className="max-w-2xl mx-auto my-8">
-        <CreateDraftForm redirect="/drafts" draftId={id} />
+    <div className="flex flex-row justify-center gap-4">
+      <div className="max-w-2xl w-3/4">
+        <CreateDraftForm redirect="/drafts" directoryName={id} />
       </div>
       <aside className="w-1/4 md:block">
         <h2 className="text-lg font-semibold mb-4">Update Draft</h2>
@@ -22,6 +23,12 @@ export default async function UpdateDraft({
           After updating, you will be redirected to the drafts list where you
           can see all your drafts.
         </p>
+        <Callout variant="info" className="flex-1">
+          <p className="m-0">
+            Sometimes it takes a few refreshes to get the updated draft data to
+            show.
+          </p>
+        </Callout>
       </aside>
     </div>
   );

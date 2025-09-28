@@ -1,119 +1,130 @@
 // TODO: Implement delete functionality for uploaded files
 
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { Button, Textarea, Input, Label } from '@/components/ui/forms'
-import { X, ExternalLink } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { Buffer } from 'buffer'
-import { useDrafts } from '@/hooks/useDrafts'
-import Image from 'next/image'
+import { useEffect, useState } from "react";
+import { Button, Textarea, Input, Label } from "@/components/ui/forms";
+import { X, ExternalLink } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Buffer } from "buffer";
+import { useDrafts } from "@/hooks/useDrafts";
+import Image from "next/image";
+import { DEFAULT_GROUP } from "@/config/frontend";
+import { CreateDraftInput } from "@/types/drafts";
 
 interface CreateDraftFormProps {
-  redirect?: string
-  draftId?: string
+  redirect?: string;
+  directoryName?: string;
 }
 
-export function CreateDraftForm({ redirect, draftId }: CreateDraftFormProps) {
-  const { getDraft, createDraft, updateDraft } = useDrafts()
-  const [text, setText] = useState('')
-  const [filesToUpload, setFilesToUpload] = useState<File[]>([])
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([])
-  const [group, setGroup] = useState('')
-  const router = useRouter()
+export function CreateDraftForm({
+  redirect,
+  directoryName,
+}: CreateDraftFormProps) {
+  const { getDraft, createDraft, updateDraft } = useDrafts();
+  const [text, setText] = useState("");
+  const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  const [group, setGroup] = useState("");
+  const [slug, setSlug] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     const fetchDraft = async () => {
-      if (!draftId) return
+      if (!directoryName) return;
       // Fetch draft data and populate form
-      const draft = await getDraft(draftId)
+      const draft = await getDraft(directoryName);
       if (draft) {
-        setText(draft.meta.text || '')
-        setFilesToUpload([])
+        setText(draft.meta.text || "");
+        setSlug(draft.meta.slug || "");
+        setFilesToUpload([]);
         setUploadedFiles(
           draft.meta.images
             ?.filter((image) => image.url)
             .map((image) => image.url)
-            .filter((url): url is string => typeof url === 'string') || []
-        )
-        setGroup(draft.group || '')
+            .filter((url): url is string => typeof url === "string") || [],
+        );
+        setGroup(draft.group || "");
       }
-    }
-    fetchDraft()
-  }, [draftId, getDraft])
+    };
+    fetchDraft();
+  }, [directoryName, getDraft]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files || [])
-    setFilesToUpload((prev) => [...prev, ...selectedFiles].slice(0, 4))
-  }
+    const selectedFiles = Array.from(e.target.files || []);
+    setFilesToUpload((prev) => [...prev, ...selectedFiles].slice(0, 4));
+  };
 
   const removeFile = (index: number) => {
-    setFilesToUpload((prev) => prev.filter((_, i) => i !== index))
-  }
+    setFilesToUpload((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const convertFileToBuffer = async (file: File): Promise<Buffer> => {
-    const arrayBuffer = await file.arrayBuffer()
-    return Buffer.from(arrayBuffer)
-  }
+    const arrayBuffer = await file.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    const images = []
-    let video = null
+    const images = [];
+    let video = null;
 
     for (const file of filesToUpload) {
-      const data = await convertFileToBuffer(file)
+      const data = await convertFileToBuffer(file);
 
-      if (file.type.startsWith('image/')) {
+      if (file.type.startsWith("image/")) {
         images.push({
-          kind: 'image' as const,
+          kind: "image" as const,
           filename: file.name,
           mime: file.type,
           data,
-        })
-      } else if (file.type.startsWith('video/')) {
+        });
+      } else if (file.type.startsWith("video/")) {
         video = {
-          kind: 'video' as const,
+          kind: "video" as const,
           filename: file.name,
           mime: file.type,
           data,
-        }
-        break // Only one video allowed
+        };
+        break; // Only one video allowed
       }
     }
 
-    const submitData = {
+    const submitData: CreateDraftInput = {
+      slug: slug || undefined,
       text: text || undefined,
       images: images.length > 0 ? images : undefined,
       video: video || undefined,
-      group: group || undefined,
-    }
-    if (draftId) {
-      await updateDraft(draftId, submitData)
+      group: group || DEFAULT_GROUP,
+    };
+    if (directoryName) {
+      await updateDraft(directoryName, submitData);
     } else {
       // Creating new draft
-      await createDraft(submitData)
+      await createDraft(submitData);
     }
 
-    setText('')
-    setFilesToUpload([])
-    setGroup('')
+    setText("");
+    setFilesToUpload([]);
+    setGroup("");
 
     if (redirect) {
-      router.push(redirect)
+      router.push(redirect);
     }
-  }
+  };
 
   const handleCancel = () => {
     if (redirect) {
-      router.push(redirect)
+      router.push(redirect);
     }
-  }
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded-lg">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900"
+    >
       <div>
         <Label htmlFor="text">Post Text</Label>
         <Textarea
@@ -126,17 +137,39 @@ export function CreateDraftForm({ redirect, draftId }: CreateDraftFormProps) {
       </div>
 
       <div>
-        <Label htmlFor="group">Group (optional)</Label>
+        <Label htmlFor="group">Slug (optional)</Label>
+        <p className="mb-2 text-sm text-gray-500">
+          This allows you to set a human readable identifier for the draft's
+          directory. If you don't set one, it will be randomly generated.
+        </p>
         <Input
-          id="group"
-          value={group}
-          onChange={(e) => setGroup(e.target.value)}
-          placeholder="e.g., drafts, scheduled, etc."
+          id="slug"
+          value={slug}
+          onChange={(e) => setSlug(e.target.value)}
+          placeholder="e.g., portraits, landscapes."
         />
       </div>
 
       <div>
-        <Label htmlFor="media">Media (up to 4 images or 1 video)</Label>
+        <Label htmlFor="group">Group (optional)</Label>
+        <p className="mb-2 text-sm text-gray-500">
+          The group is associated with scheduling. It also is the subdirectory
+          the post is stored in on your filesystem.
+        </p>
+        <Input
+          id="group"
+          value={group}
+          onChange={(e) => setGroup(e.target.value)}
+          placeholder="e.g., throwbacks, new-releases, taco-tuesdays etc."
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="media">Media</Label>
+        <p className="mb-2 text-sm text-gray-500">
+          {" "}
+          Up to 4 images or 1 video.
+        </p>
         <Input
           id="media"
           type="file"
@@ -152,9 +185,10 @@ export function CreateDraftForm({ redirect, draftId }: CreateDraftFormProps) {
       {filesToUpload.length > 0 && (
         <div className="grid grid-cols-2 gap-2">
           {filesToUpload.map((file, index) => (
-            <div key={index} className="relative">
+            <div key={file.name} className="relative">
               <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-800 rounded">
-                {file.type.startsWith('image/') ? (
+                {file.type.startsWith("image/") ? (
+                  // biome-ignore lint/performance/noImgElement: Need it for a data URL
                   <img
                     src={URL.createObjectURL(file)}
                     alt={file.name}
@@ -185,27 +219,29 @@ export function CreateDraftForm({ redirect, draftId }: CreateDraftFormProps) {
 
       <div className="flex gap-2">
         <Button type="submit">
-          {draftId ? 'Update Draft' : 'Create Draft'}
+          {directoryName ? "Update Draft" : "Create Draft"}
         </Button>
-        <Button type="button" variant="outline" onClick={handleCancel}>
+        <Button type="button" variant="secondary" onClick={handleCancel}>
           Cancel
         </Button>
       </div>
     </form>
-  )
+  );
 }
 
-function UploadedFilesOutput({ files }: { files: string[] }) {
-  if (files.length === 0) return null
+function UploadedFilesOutput({ files: uploadedFiles }: { files: string[] }) {
+  const { deleteMediaFromDraft } = useDrafts();
+  const [files, setFiles] = useState(uploadedFiles);
+  if (files.length === 0) return null;
   return (
     <div className="mt-2">
       <Label>Uploaded Files:</Label>
       <ul className="m-0 p-0 list-none grid grid-cols-4 gap-2">
-        {files.map((file, index) => (
-          <li key={index} className="relative aspect-square group">
+        {files.map((file) => (
+          <li key={file} className="relative aspect-square group">
             <Image
               src={file}
-              alt={'Photograph'}
+              alt={"Photograph"}
               fill
               className="object-cover rounded"
             />
@@ -213,15 +249,32 @@ function UploadedFilesOutput({ files }: { files: string[] }) {
               type="button"
               variant="icon"
               title="Open in new tab"
-              onClick={() => window.open(file, '_blank', 'noopener,noreferrer')}
+              onClick={() => window.open(file, "_blank", "noopener,noreferrer")}
               className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"
               tabIndex={-1}
             >
               <ExternalLink size={16} />
             </Button>
+
+            <Button
+              type="button"
+              variant="icon"
+              color="danger"
+              title="Delete file"
+              onClick={async () => {
+                if (confirm("Are you sure you want to delete this file?")) {
+                  await deleteMediaFromDraft(file);
+                  setFiles((prevFiles) => prevFiles.filter((f) => f !== file));
+                }
+              }}
+              className="absolute top-1 left-1 opacity-0 group-hover:opacity-100"
+              tabIndex={-1}
+            >
+              <X size={16} />
+            </Button>
           </li>
         ))}
       </ul>
     </div>
-  )
+  );
 }

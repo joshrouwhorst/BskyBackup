@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url'
 const SRC_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 export const APP_DATA_FILE = `${SRC_DIR}/app-data/app-data`
 export const LOGS_PATH = `${SRC_DIR}/logs`
+export const DEFAULT_GROUP = 'default' // in all 3 config files
 export const APP_DATA_ENCRYPTION_KEY =
   process.env.APP_DATA_ENCRYPTION_KEY || 'default_secret_key_32bytes!' // Must be 32 bytes
 

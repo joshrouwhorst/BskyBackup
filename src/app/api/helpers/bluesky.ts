@@ -315,7 +315,7 @@ export async function addPost(post: DraftPost) {
         if (post.group) {
           parts.push(post.group)
         }
-        parts.push(post.meta.id, post.meta.mediaDir, image.filename)
+        parts.push(post.meta.directoryName, post.meta.mediaDir, image.filename)
         const path = parts.join('/')
         const imageData = await fs.readFile(path) // or however you get the image data
         await governor.wait(200)

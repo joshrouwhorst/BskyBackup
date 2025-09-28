@@ -8,7 +8,7 @@ export type DraftMediaFileInput = {
 }
 
 export type CreateDraftInput = {
-  id?: string // optional custom id; otherwise generated
+  slug?: string // optional custom slug; otherwise generated
   group: string // group identifier for the post
   text?: string
   images?: DraftMediaFileInput[] // up to 4
@@ -28,7 +28,8 @@ export type DraftMedia = {
 }
 
 export type DraftMeta = {
-  id: string
+  directoryName: string // Unique and includes slug
+  slug: string // Not necessarily unique
   text?: string
   createdAt: string
   mediaDir: string // relative path under post directory

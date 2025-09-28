@@ -40,7 +40,11 @@ export async function getDraftPost(
   const post = await store.readPostDir(id, group)
   if (post) return post
   const posts = await store.listPosts()
-  return posts.find((p) => p.meta.id === id) || null
+  return posts.find((p) => p.meta.directoryName === id) || null
+}
+
+export async function migratePostStructures(): Promise<void> {
+  await store.migratePostStructures()
 }
 
 export async function createDraftPost(
@@ -51,14 +55,14 @@ export async function createDraftPost(
 
 export async function deleteDraftPost(id: string): Promise<void> {
   const posts = await store.listPosts()
-  const post = posts.find((p) => p.meta.id === id)
+  const post = posts.find((p) => p.meta.directoryName === id)
   if (!post) throw new Error('Post not found')
   return store.deletePost(post)
 }
 
 export async function duplicateDraftPost(id: string): Promise<DraftPost> {
   const posts = await store.listPosts()
-  const post = posts.find((p) => p.meta.id === id)
+  const post = posts.find((p) => p.meta.directoryName === id)
   if (!post) throw new Error('Post not found')
   return store.duplicatePost(post)
 }
@@ -86,7 +90,7 @@ export async function publishDraftPost(
   platforms?: string[]
 ): Promise<void> {
   const posts = await store.listPosts()
-  const post = posts.find((p) => p.meta.id === id)
+  const post = posts.find((p) => p.meta.directoryName === id)
   if (!post) throw new Error('Post not found')
   if (!platforms || platforms.length === 0) {
     platforms = [...SUPPORTED_SOCIAL_PLATFORMS]
@@ -129,7 +133,7 @@ export async function reorderGroupPosts(
     throw new Error('New order length does not match number of scheduled posts')
   }
 
-  const idSet = new Set(postsToReorder.map((p) => p.meta.id))
+  const idSet = new Set(postsToReorder.map((p) => p.meta.directoryName))
   for (const id of newOrder) {
     if (!idSet.has(id)) {
       throw new Error(`Post ID ${id} is not part of the scheduled posts`)

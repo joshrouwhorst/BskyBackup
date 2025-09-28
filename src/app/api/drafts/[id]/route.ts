@@ -91,7 +91,7 @@ export async function PUT(
     return NextResponse.json(newPost, { status: 201 })
   } catch (error) {
     return NextResponse.json(
-      { error: 'Failed to create post' },
+      { error: 'Failed to update post' },
       { status: 500 }
     )
   }
