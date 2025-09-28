@@ -3,14 +3,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Textarea, Input, Label } from "@/components/ui/forms";
+import {
+  Button,
+  Textarea,
+  Input,
+  Label,
+  LinkButton,
+} from "@/components/ui/forms";
 import { X, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Buffer } from "buffer";
 import { useDrafts } from "@/hooks/useDrafts";
 import Image from "next/image";
 import { DEFAULT_GROUP } from "@/config/frontend";
-import { CreateDraftInput } from "@/types/drafts";
+import { CreateDraftInput, DraftMedia } from "@/types/drafts";
 
 interface CreateDraftFormProps {
   redirect?: string;
@@ -24,7 +30,7 @@ export function CreateDraftForm({
   const { getDraft, createDraft, updateDraft } = useDrafts();
   const [text, setText] = useState("");
   const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<DraftMedia[]>([]);
   const [group, setGroup] = useState("");
   const [slug, setSlug] = useState("");
   const router = useRouter();
@@ -39,10 +45,11 @@ export function CreateDraftForm({
         setSlug(draft.meta.slug || "");
         setFilesToUpload([]);
         setUploadedFiles(
-          draft.meta.images
-            ?.filter((image) => image.url)
-            .map((image) => image.url)
-            .filter((url): url is string => typeof url === "string") || [],
+          draft.meta.images.length > 0
+            ? draft.meta.images
+            : draft.meta.video
+              ? [draft.meta.video]
+              : [],
         );
         setGroup(draft.group || "");
       }
@@ -229,32 +236,34 @@ export function CreateDraftForm({
   );
 }
 
-function UploadedFilesOutput({ files: uploadedFiles }: { files: string[] }) {
+function UploadedFilesOutput({ files }: { files: DraftMedia[] }) {
   const { deleteMediaFromDraft } = useDrafts();
-  const [files, setFiles] = useState(uploadedFiles);
-  if (files.length === 0) return null;
+  if (files.length === 0) return <div>No files uploaded</div>;
   return (
     <div className="mt-2">
       <Label>Uploaded Files:</Label>
       <ul className="m-0 p-0 list-none grid grid-cols-4 gap-2">
         {files.map((file) => (
-          <li key={file} className="relative aspect-square group">
+          <li key={file.filename} className="relative aspect-square group">
             <Image
-              src={file}
+              src={file.url as string}
               alt={"Photograph"}
               fill
               className="object-cover rounded"
             />
-            <Button
+            <LinkButton
               type="button"
               variant="icon"
               title="Open in new tab"
-              onClick={() => window.open(file, "_blank", "noopener,noreferrer")}
+              href={file.url as string}
+              target="_blank"
+              rel="noopener noreferrer"
+              color="primary"
               className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"
               tabIndex={-1}
             >
               <ExternalLink size={16} />
-            </Button>
+            </LinkButton>
 
             <Button
               type="button"
@@ -263,8 +272,7 @@ function UploadedFilesOutput({ files: uploadedFiles }: { files: string[] }) {
               title="Delete file"
               onClick={async () => {
                 if (confirm("Are you sure you want to delete this file?")) {
-                  await deleteMediaFromDraft(file);
-                  setFiles((prevFiles) => prevFiles.filter((f) => f !== file));
+                  await deleteMediaFromDraft(file.url as string);
                 }
               }}
               className="absolute top-1 left-1 opacity-0 group-hover:opacity-100"
