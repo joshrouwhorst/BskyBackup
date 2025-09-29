@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
-FROM node:20 AS deps
+FROM node:24 AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-FROM node:20 AS builder
+FROM node:24 AS builder
 WORKDIR /app
 COPY . .
 RUN npm install --os=linux --cpu=arm64 sharp
@@ -13,7 +13,7 @@ RUN npm rebuild
 RUN npm run build
     
 
-FROM node:20 AS runner
+FROM node:24 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
