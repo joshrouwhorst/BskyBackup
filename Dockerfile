@@ -7,10 +7,14 @@ RUN npm ci --omit=dev
 FROM node:24 AS builder
 WORKDIR /app
 COPY . .
-RUN npm install --os=linux --cpu=arm64 sharp
-RUN npm run lint || true
+ARG TARGETARCH
+ARG TARGETOS
+RUN npm install --os=${TARGETOS} --cpu=${TARGETARCH}
 RUN npm rebuild
-RUN npm run build
+RUN npm install --no-save --platform=linux --arch=x64 lightningcss || true
+RUN npm install --no-save --platform=linux --arch=arm64 lightningcss || true
+RUN npm rebuild lightningcss || true
+RUN npm run build || (npm install --os=${TARGETOS} --cpu=${TARGETARCH} lightningcss && npm run build)
     
 
 FROM node:24 AS runner
