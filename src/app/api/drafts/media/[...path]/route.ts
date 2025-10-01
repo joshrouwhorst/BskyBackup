@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
-import { getPaths } from '@/app/api/services/SettingsService'
+import { getPaths } from '@/config/main'
 import Logger from '@/app/api/helpers/logger'
 
 const logger = new Logger('DraftMediaRoute')

@@ -1,7 +1,7 @@
 import path from 'path'
 import { FeedViewPost } from '@/types/bsky'
 import { saveJsonToFile, readJsonFromFile, downloadFile } from './utils'
-import { getPaths } from '../services/SettingsService'
+import { getPaths } from '@/config/main'
 import Logger from './logger'
 
 const logger = new Logger('BackupFile')

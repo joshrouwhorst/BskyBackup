@@ -4,7 +4,6 @@ import type { CreateDraftInput, DraftPost } from '@/types/drafts'
 import { addPost as addPostToBsky } from '@/app/api/helpers/bluesky'
 import { SocialPlatform } from '@/types/scheduler'
 import Logger from '../helpers/logger'
-import { getPaths } from './SettingsService'
 
 const logger = new Logger('DrPostServ')
 

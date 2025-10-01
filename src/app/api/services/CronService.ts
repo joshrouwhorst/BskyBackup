@@ -8,6 +8,24 @@ import { cron } from '@/app/api/helpers/cron'
 import { Schedule } from '@/types/scheduler'
 
 const logger = new Logger('CronService')
+init()
+
+async function init() {
+  logger.log('Initializing Cron Service...')
+  await scheduleNextPosts()
+}
+
+export async function getScheduledGroups(): Promise<string[]> {
+  const schedules = await getSchedules()
+  const groups: string[] = []
+  for (const schedule of schedules) {
+    if (!schedule.group || !schedule.id || !schedule.isActive) continue // Skip if no group defined
+    const id = `schedule-${schedule.group}`
+    if (!cron.hasTask(id)) continue // Task not already scheduled
+    groups.push(schedule.group)
+  }
+  return groups
+}
 
 export async function scheduleNextPosts() {
   const schedules = await getSchedules()
@@ -25,18 +43,7 @@ export async function scheduleNextPosts() {
       nextRun = getNextTriggerTime(new Date(), schedule.frequency)
     }
 
-    // Debug logging to trace scheduling
-
-    console.log(
-      `Next run for schedule ${schedule.group} is at ${nextRun.toISOString()}`
-    )
-    console.log(`Current time is ${new Date().toISOString()}`)
-    console.log(
-      `Schedule interval is every ${schedule.frequency.interval.every} ${schedule.frequency.interval.unit}`
-    )
-
     const now = new Date()
-
     const success = cron.addTask(
       id,
       async () => {

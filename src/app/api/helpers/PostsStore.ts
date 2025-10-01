@@ -17,7 +17,7 @@ import {
 } from '@/config/main'
 import Logger from './logger'
 import { Governor } from './governor'
-import { getPaths } from '../services/SettingsService'
+import { getPaths } from '@/config/main'
 
 const META_FILENAME = 'meta.json'
 const TEXT_FILENAME = 'post.txt'

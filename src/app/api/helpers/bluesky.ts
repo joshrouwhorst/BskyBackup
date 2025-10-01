@@ -5,7 +5,8 @@ import fs from 'fs/promises'
 import { Main } from '@atproto/api/dist/client/types/app/bsky/richtext/facet'
 import { Governor } from './governor'
 import Logger from '../helpers/logger'
-import { getSettings, getPaths } from '../services/SettingsService'
+import { getSettings } from '../services/SettingsService'
+import { getPaths } from '@/config/main'
 
 const logger = new Logger('BlueskySvc')
 
