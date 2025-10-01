@@ -22,7 +22,7 @@ function padName(name: string): string {
   return name + ' '.repeat(10 - name.length)
 }
 
-class Logger {
+export default class Logger {
   private name: string
 
   constructor(name: string) {
@@ -78,7 +78,7 @@ class Logger {
 
 function getCircularReplacer() {
   const seen = new WeakSet()
-  return function (key: string, value: any) {
+  return (key: string, value: any) => {
     if (typeof value === 'object' && value !== null) {
       if (seen.has(value)) {
         return '[Circular]'
@@ -88,5 +88,3 @@ function getCircularReplacer() {
     return value
   }
 }
-
-export default Logger

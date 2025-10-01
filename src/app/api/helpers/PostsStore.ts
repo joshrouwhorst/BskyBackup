@@ -9,15 +9,15 @@ import type {
   DraftMedia,
   DraftMediaFileInput,
 } from '@/types/drafts'
-import sharp from 'sharp'
+import { Jimp } from 'jimp'
 import {
   DRAFT_MEDIA_ENDPOINT,
-  PUBLISHED_POSTS_PATH,
   DEFAULT_GROUP,
   DEFAULT_POST_SLUG,
-} from '@/config/api'
+} from '@/config/main'
 import Logger from './logger'
 import { Governor } from './governor'
+import { getPaths } from '../services/SettingsService'
 
 const META_FILENAME = 'meta.json'
 const TEXT_FILENAME = 'post.txt'
@@ -56,6 +56,16 @@ function generateDirPath({
   const directoryName = `${formattedDate}_${newSlug}`
   const dirItems = group ? [root, group, directoryName] : [root, directoryName]
   return { directoryName, slug: newSlug, fullPath: path.join(...dirItems) }
+}
+
+let store: PostsStore
+
+export async function getPostsStore(): Promise<PostsStore> {
+  if (!store) {
+    const { draftPostsPath } = await getPaths()
+    store = new PostsStore(draftPostsPath)
+  }
+  return store
 }
 
 export class PostsStore {
@@ -625,9 +635,10 @@ export class PostsStore {
 
   async movePostToPublished(post: DraftPost): Promise<DraftPost> {
     logger.log(`Publishing draft post ${post.meta.directoryName}.`)
-    await ensureDir(PUBLISHED_POSTS_PATH)
+    const { publishedPostsPath } = await getPaths()
+    await ensureDir(publishedPostsPath)
     const newDir = path.join(
-      PUBLISHED_POSTS_PATH,
+      publishedPostsPath,
       ...(post.group ? [post.group] : []),
       path.basename(post.dir)
     )
@@ -703,14 +714,15 @@ async function getImageDimensions(
   filePath: string
 ): Promise<{ width: number; height: number; size: number }> {
   try {
-    const metadata = await sharp(filePath).metadata()
+    const metadata = await Jimp.read(filePath)
+    const stats = await fs.stat(filePath)
     return {
       width: metadata.width || 0,
       height: metadata.height || 0,
-      size: metadata.size || 0,
+      size: stats.size || 0,
     }
   } catch (error) {
-    // Fallback dimensions if sharp fails
+    // Fallback dimensions if Jimp fails
     return { width: 0, height: 0, size: 0 }
   }
 }

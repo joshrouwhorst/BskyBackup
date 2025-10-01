@@ -1,13 +1,12 @@
-import { PostsStore } from '../helpers/PostsStore'
-import { DRAFT_POSTS_PATH, SUPPORTED_SOCIAL_PLATFORMS } from '@/config/api'
+import { getPostsStore } from '../helpers/PostsStore'
+import { SUPPORTED_SOCIAL_PLATFORMS } from '@/config/main'
 import type { CreateDraftInput, DraftPost } from '@/types/drafts'
 import { addPost as addPostToBsky } from '@/app/api/helpers/bluesky'
 import { SocialPlatform } from '@/types/scheduler'
 import Logger from '../helpers/logger'
+import { getPaths } from './SettingsService'
 
 const logger = new Logger('DrPostServ')
-
-const store = new PostsStore(DRAFT_POSTS_PATH)
 
 init()
 
@@ -18,10 +17,12 @@ function init() {
 export async function getDraftPostsInGroup(
   group: string
 ): Promise<DraftPost[]> {
+  const store = await getPostsStore()
   return store.listPostsInGroup(group)
 }
 
 export async function getDraftPosts(): Promise<DraftPost[]> {
+  const store = await getPostsStore()
   return store.listPosts()
 }
 
@@ -29,6 +30,7 @@ export async function getDraftPost(
   id: string,
   group?: string
 ): Promise<DraftPost | null> {
+  const store = await getPostsStore()
   if (!group) {
     const groups = await store.listGroups()
     for (const g of groups) {
@@ -44,16 +46,19 @@ export async function getDraftPost(
 }
 
 export async function migratePostStructures(): Promise<void> {
+  const store = await getPostsStore()
   await store.migratePostStructures()
 }
 
 export async function createDraftPost(
   input: CreateDraftInput
 ): Promise<DraftPost> {
+  const store = await getPostsStore()
   return store.createPost(input)
 }
 
 export async function deleteDraftPost(id: string): Promise<void> {
+  const store = await getPostsStore()
   const posts = await store.listPosts()
   const post = posts.find((p) => p.meta.directoryName === id)
   if (!post) throw new Error('Post not found')
@@ -61,6 +66,7 @@ export async function deleteDraftPost(id: string): Promise<void> {
 }
 
 export async function duplicateDraftPost(id: string): Promise<DraftPost> {
+  const store = await getPostsStore()
   const posts = await store.listPosts()
   const post = posts.find((p) => p.meta.directoryName === id)
   if (!post) throw new Error('Post not found')
@@ -71,10 +77,12 @@ export async function updateDraftPost(
   id: string,
   input: CreateDraftInput
 ): Promise<DraftPost | null> {
+  const store = await getPostsStore()
   return store.updatePost(id, input)
 }
 
 export async function getGroups(): Promise<string[]> {
+  const store = await getPostsStore()
   return store.listGroups()
 }
 
@@ -82,6 +90,7 @@ export async function readMediaFile(
   post: DraftPost,
   filePath: string
 ): Promise<Buffer> {
+  const store = await getPostsStore()
   return store.loadMediaBuffer(post, filePath)
 }
 
@@ -89,6 +98,7 @@ export async function publishDraftPost(
   id: string,
   platforms?: string[]
 ): Promise<void> {
+  const store = await getPostsStore()
   const posts = await store.listPosts()
   const post = posts.find((p) => p.meta.directoryName === id)
   if (!post) throw new Error('Post not found')
@@ -105,6 +115,7 @@ async function sendToSocialPlatform(
   post: DraftPost,
   platform: SocialPlatform
 ): Promise<void> {
+  const store = await getPostsStore()
   // Implement actual social media posting logic here
   // This would integrate with platform-specific APIs
   switch (platform) {
@@ -119,6 +130,8 @@ async function sendToSocialPlatform(
 }
 
 export async function getGroupOrder(group: string): Promise<string[]> {
+  ;('')
+  const store = await getPostsStore()
   return store.getGroupOrder(group)
 }
 
@@ -140,5 +153,6 @@ export async function reorderGroupPosts(
     }
   }
 
+  const store = await getPostsStore()
   await store.setGroupOrder(group, newOrder)
 }

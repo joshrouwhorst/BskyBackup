@@ -1,10 +1,13 @@
 import { AtpAgent } from '@atproto/api'
 import { FeedViewPost } from '@/types/bsky'
-import { BSKY_IDENTIFIER, BSKY_PASSWORD, DRAFT_POSTS_PATH } from '@/config/api'
 import { DraftPost } from '@/types/drafts'
 import fs from 'fs/promises'
 import { Main } from '@atproto/api/dist/client/types/app/bsky/richtext/facet'
 import { Governor } from './governor'
+import Logger from '../helpers/logger'
+import { getSettings, getPaths } from '../services/SettingsService'
+
+const logger = new Logger('BlueskySvc')
 
 const governor = new Governor(1000)
 
@@ -21,11 +24,17 @@ export async function getPosts(
   config?: PostFilters,
   useCache: boolean = false
 ): Promise<FeedViewPost[]> {
+  const settings = await getSettings()
+  const BSKY_IDENTIFIER =
+    settings?.bskyIdentifier || process.env.BSKY_IDENTIFIER
+  const BSKY_PASSWORD = settings?.bskyPassword || process.env.BSKY_PASSWORD
+
   if (!BSKY_IDENTIFIER || !BSKY_PASSWORD) {
+    logger.error('Cannot find Bluesky credentials in settings')
     throw new Error('Bluesky credentials are not set in settings')
   }
 
-  console.log('BSKY_IDENTIFIER:', BSKY_IDENTIFIER)
+  logger.log('BSKY_IDENTIFIER:', BSKY_IDENTIFIER)
 
   // Use cached posts if within cache duration
   if (
@@ -34,6 +43,7 @@ export async function getPosts(
     cacheDate &&
     new Date().getTime() - cacheDate.getTime() < CACHE_DURATION_MS
   ) {
+    logger.log('Using cached posts')
     return postCache
   }
 
@@ -46,19 +56,23 @@ export async function getPosts(
   })
 
   try {
+    logger.log(`Authenticating with Bluesky as ${BSKY_IDENTIFIER}...`)
     await agent.login({
       identifier: BSKY_IDENTIFIER,
       password: BSKY_PASSWORD,
     })
+    logger.log('Successfully authenticated with Bluesky')
 
     let cursor: string | undefined
 
     do {
+      logger.log('Fetching posts with cursor:', cursor)
       const response = await agent.getAuthorFeed({
         actor: BSKY_IDENTIFIER.toLowerCase(),
         cursor,
         limit: 100,
       })
+      logger.log(`Fetched ${response.data.feed.length} posts`)
 
       if (config && config.isComment === true) {
         // Filter out comments/replies, keep only original posts
@@ -83,7 +97,7 @@ export async function getPosts(
     postCache = postList
     cacheDate = new Date()
   } catch (error) {
-    console.error('Error fetching posts:', error)
+    logger.error('Error fetching posts:', error)
     throw new Error(
       `Failed to fetch posts: ${
         error instanceof Error ? error.message : 'Unknown error'
@@ -93,7 +107,7 @@ export async function getPosts(
     try {
       await agent.logout()
     } catch (logoutError) {
-      console.warn('Error during logout:', logoutError)
+      logger.error('Error during logout:', logoutError)
     }
   }
 
@@ -107,6 +121,14 @@ export async function deletePostsWithUris(postUris: string[]): Promise<void> {
   })
 
   try {
+    const settings = await getSettings()
+    const BSKY_IDENTIFIER =
+      settings?.bskyIdentifier || process.env.BSKY_IDENTIFIER
+    const BSKY_PASSWORD = settings?.bskyPassword || process.env.BSKY_PASSWORD
+    if (!BSKY_IDENTIFIER || !BSKY_PASSWORD) {
+      logger.error('Cannot find Bluesky credentials in settings')
+      throw new Error('Bluesky credentials are not set in settings')
+    }
     console.log(`Authenticating with Bluesky as ${BSKY_IDENTIFIER}...`)
     await agent.login({
       identifier: BSKY_IDENTIFIER,
@@ -142,6 +164,15 @@ export async function deletePosts(config: PostFilters): Promise<void> {
   })
 
   try {
+    const settings = await getSettings()
+    const BSKY_IDENTIFIER =
+      settings?.bskyIdentifier || process.env.BSKY_IDENTIFIER
+    const BSKY_PASSWORD = settings?.bskyPassword || process.env.BSKY_PASSWORD
+    if (!BSKY_IDENTIFIER || !BSKY_PASSWORD) {
+      logger.error('Cannot find Bluesky credentials in settings')
+      throw new Error('Bluesky credentials are not set in settings')
+    }
+
     if (!config.cutoffDate) {
       throw new Error('cutoffDate is required to delete posts')
     }
@@ -300,6 +331,17 @@ export async function addPost(post: DraftPost) {
   })
 
   try {
+    const settings = await getSettings()
+    const BSKY_IDENTIFIER =
+      settings?.bskyIdentifier || process.env.BSKY_IDENTIFIER
+    const BSKY_PASSWORD = settings?.bskyPassword || process.env.BSKY_PASSWORD
+    if (!BSKY_IDENTIFIER || !BSKY_PASSWORD) {
+      logger.error('Cannot find Bluesky credentials in settings')
+      throw new Error('Bluesky credentials are not set in settings')
+    }
+
+    const { draftPostsPath } = await getPaths()
+
     await agent.login({
       identifier: BSKY_IDENTIFIER,
       password: BSKY_PASSWORD,
@@ -311,7 +353,7 @@ export async function addPost(post: DraftPost) {
     if (post.meta.images && post.meta.images.length > 0) {
       for (const image of post.meta.images) {
         // Assuming image.filename is a file path or buffer
-        const parts = [DRAFT_POSTS_PATH]
+        const parts = [draftPostsPath]
         if (post.group) {
           parts.push(post.group)
         }

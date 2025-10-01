@@ -15,6 +15,7 @@ import {
   Folder,
   CopyPlus,
   CloudUpload,
+  FolderPen,
 } from "lucide-react";
 import { PostDisplayData } from "@/types/types";
 import PostMediaCarousel from "./PostMediaCarousel";
@@ -99,6 +100,7 @@ function getDisplayDataFromDraft(draftPost: DraftPost): PostDisplayData {
       : undefined,
     draftId: draftPost.meta.directoryName,
     group: draftPost.group,
+    slug: draftPost.meta.slug,
   } as PostDisplayData;
 }
 
@@ -384,12 +386,20 @@ export default function Post({
             {item.repostCount || 0}
           </span>
         </div>
+        {item.slug && (
+          <div
+            className="flex items-center gap-1 text-sm text-gray-500"
+            title="Post slug"
+          >
+            <FolderPen className="w-4 h-4 text-blue-500" /> {item.slug}
+          </div>
+        )}
         <div className="flex flex-1 justify-end">
           {item.group && (
             <LinkButton
               href={`/groups/${item.group}`}
               variant="icon"
-              className="flex items-center gap-1  text-sm text-gray-500 mr-4"
+              className="flex items-center gap-1 text-sm text-gray-500 mr-4"
               title={`Posted in group ${item.group}`}
             >
               <Folder className="w-4 h-4 text-blue-500" />

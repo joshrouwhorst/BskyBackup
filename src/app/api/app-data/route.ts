@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getAppData } from '../helpers/appData'
+import Logger from '../helpers/logger'
+
+const logger = new Logger('AppDataRoute')
 
 export async function GET() {
   try {
@@ -14,6 +17,7 @@ export async function GET() {
       oldestBskyPostDate,
     })
   } catch (error) {
+    logger.error('Failed to fetch app data', error)
     return NextResponse.json(
       { error: 'Failed to fetch app data' },
       { status: 500 }

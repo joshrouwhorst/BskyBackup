@@ -1,14 +1,13 @@
-import { APP_DATA_FILE, APP_DATA_ENCRYPTION_KEY } from '@/config/main'
+import { APP_DATA_FILE, ENCRYPTION_KEY } from '@/config/main'
 import fs from 'fs'
 import path from 'path'
 
-import { AppData } from '@/types/types'
+import type { AppData } from '@/types/types'
 import Logger from './logger'
 import crypto from 'crypto'
 import { ensureDir } from './utils'
 const logger = new Logger('AppData')
 
-const ENCRYPTION_KEY = APP_DATA_ENCRYPTION_KEY.padEnd(32, '0').slice(0, 32) // Must be 32 bytes
 const IV_LENGTH = 16
 
 function encrypt(text: string): string {

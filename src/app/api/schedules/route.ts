@@ -4,12 +4,15 @@ import {
   deleteSchedule,
   getSchedules,
 } from '../services/SchedulePostService'
-import { CronService } from '../services/CronService'
+import { scheduleNextPosts, unscheduleAll } from '../services/CronService'
 import { NextRequest, NextResponse } from 'next/server'
+import Logger from '@/app/api/helpers/logger'
+
+const logger = new Logger('ScheduleRoute')
 
 export async function GET(request: NextRequest) {
   try {
-    await CronService.scheduleNextPosts() // Ensure cron job is running to handle schedules
+    await scheduleNextPosts() // Ensure cron job is running to handle schedules
     const { searchParams } = new URL(request.url)
     const scheduleId = searchParams.get('id')
 
@@ -18,6 +21,7 @@ export async function GET(request: NextRequest) {
     if (scheduleId) {
       const schedule = schedules.find((s) => s.id === scheduleId)
       if (!schedule) {
+        logger.error('Schedule not found for ID:', scheduleId)
         return NextResponse.json(
           { error: 'Schedule not found' },
           { status: 404 }
@@ -27,6 +31,7 @@ export async function GET(request: NextRequest) {
     }
     return NextResponse.json(schedules)
   } catch (error) {
+    logger.error('Failed to fetch schedules', error)
     return NextResponse.json(
       { error: 'Failed to fetch schedules' },
       { status: 500 }
@@ -40,6 +45,7 @@ export async function POST(request: NextRequest) {
     const schedule = await createSchedule(body)
     return NextResponse.json(schedule, { status: 201 })
   } catch (error) {
+    logger.error('Failed to create schedule', error)
     return NextResponse.json(
       { error: 'Failed to create schedule' },
       { status: 500 }
@@ -52,10 +58,11 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { id, ...updateData } = body
     const schedule = await updateSchedule(id, updateData)
-    CronService.unscheduleAll()
-    await CronService.scheduleNextPosts() // Reschedule cron jobs after update
+    unscheduleAll()
+    await scheduleNextPosts() // Reschedule cron jobs after update
     return NextResponse.json(schedule)
   } catch (error) {
+    logger.error('Failed to update schedule', error)
     return NextResponse.json(
       { error: 'Failed to update schedule' },
       { status: 500 }
@@ -69,6 +76,7 @@ export async function DELETE(request: NextRequest) {
     const scheduleId = searchParams.get('id')
 
     if (!scheduleId) {
+      logger.error('Schedule ID is required')
       return NextResponse.json(
         { error: 'Schedule ID is required' },
         { status: 400 }
@@ -78,6 +86,7 @@ export async function DELETE(request: NextRequest) {
     await deleteSchedule(scheduleId)
     return NextResponse.json({ message: 'Schedule deleted successfully' })
   } catch (error) {
+    logger.error('Failed to delete schedule', error)
     return NextResponse.json(
       { error: 'Failed to delete schedule' },
       { status: 500 }

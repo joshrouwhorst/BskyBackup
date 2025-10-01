@@ -85,6 +85,10 @@ docker build -t bsky-backup:latest .
 docker run -d --name bsky-backup -p 3000:3000 bsky-backup:latest
 ```
 
+```shell
+ docker buildx build --platform linux/amd64,linux/arm64 --build-arg TARGETARCH=x64 --build-arg TARGETARCH=arm64 -t joshrouwhorst/bsky-backup:latest --push .
+```
+
 ## Important File Locations
 
 ### Configuration

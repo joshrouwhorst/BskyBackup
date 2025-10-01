@@ -5,19 +5,28 @@ import {
   getDraftPost,
   createDraftPost,
   updateDraftPost,
-  deleteDraftPost,
   getDraftPostsInGroup,
 } from '@/app/api/services/DraftPostService'
 import type { CreateDraftInput } from '@/types/drafts'
+import Logger from '@/app/api/helpers/logger'
+
+const logger = new Logger('DraftsRoute')
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id?: string }> }
 ) {
+  let id = undefined
+
+  if (params) {
+    const resolvedParams = await params
+    id = resolvedParams.id
+  }
+
+  const { searchParams } = new URL(request.url)
+  const group = searchParams.get('group') || undefined
+
   try {
-    const { id } = await params
-    const { searchParams } = new URL(request.url)
-    const group = searchParams.get('group') || undefined
     if (id) {
       const post = await getDraftPost(id)
       return NextResponse.json(post)
@@ -29,6 +38,7 @@ export async function GET(
       return NextResponse.json(appData)
     }
   } catch (error) {
+    logger.error('Failed to fetch posts', error)
     return NextResponse.json(
       {
         error: 'Failed to fetch posts',
@@ -53,6 +63,7 @@ export async function POST(request: Request) {
       return NextResponse.json(newPost, { status: 201 })
     }
   } catch (error) {
+    logger.error('Failed to create post(s)', error)
     return NextResponse.json(
       { error: 'Failed to create post(s)' },
       { status: 500 }
@@ -77,6 +88,7 @@ export async function PUT(
     const updatedPost = await updateDraftPost(id, input)
     return NextResponse.json(updatedPost)
   } catch (error) {
+    logger.error('Failed to update post', error)
     return NextResponse.json(
       { error: 'Failed to update post' },
       { status: 500 }

@@ -11,9 +11,12 @@ ARG TARGETARCH
 ARG TARGETOS
 RUN npm install --os=${TARGETOS} --cpu=${TARGETARCH}
 RUN npm rebuild
-RUN npm install --no-save --platform=linux --arch=x64 lightningcss || true
-RUN npm install --no-save --platform=linux --arch=arm64 lightningcss || true
-RUN npm rebuild lightningcss || true
+RUN npm install --no-save --platform=linux --arch=x64 lightningcss
+RUN npm install --no-save --platform=linux --arch=arm64 lightningcss
+RUN npm rebuild lightningcss
+RUN npm install --no-save --platform=linux --arch=x64 sharp
+RUN npm install --no-save --platform=linux --arch=arm64 sharp
+RUN npm rebuild sharp
 RUN npm run build || (npm install --os=${TARGETOS} --cpu=${TARGETARCH} lightningcss && npm run build)
     
 

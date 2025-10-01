@@ -42,4 +42,5 @@ export interface PostDisplayData {
   draftId?: string
   postId?: string
   group?: string
+  slug?: string
 }

@@ -4,15 +4,13 @@ import {
   saveBackup,
 } from '@/app/api/helpers/backupFiles'
 import { getPosts, deletePosts } from '@/app/api/helpers/bluesky'
-import { PostData } from '@/types/bsky'
+import { FeedViewPost, PostData } from '@/types/bsky'
 import { transformFeedViewPostToPostData } from '@/app/api/helpers/transformFeedViewPostToPostData'
-import {
-  DEFAULT_PRUNE_MONTHS,
-  MINIMUM_MINUTES_BETWEEN_BACKUPS,
-} from '@/config/api'
+import { MINIMUM_MINUTES_BETWEEN_BACKUPS } from '@/config/main'
 import Logger from '@/app/api/helpers/logger'
 import { formatDate } from '@/helpers/utils'
 import { getAppData, saveAppData } from '../helpers/appData'
+import { getSettings } from './SettingsService'
 
 const logger = new Logger('BackupServ')
 
@@ -59,8 +57,14 @@ export async function runBackup() {
 
   logger.log(`There are ${backupPosts.length} existing posts in backup.`)
 
-  // Get all posts from Bluesky
-  const newPosts = await getPosts()
+  let newPosts: FeedViewPost[] = []
+  try {
+    // Get all posts from Bluesky
+    newPosts = await getPosts()
+  } catch (error) {
+    logger.error('Error getting posts from Bluesky:', error)
+  }
+
   if (newPosts.length === 0) {
     logger.log('We received no posts from Bluesky.')
     logger.closing('Backup Process')
@@ -76,7 +80,14 @@ export async function runBackup() {
 
   let newMediaCount = 0
   newPosts.forEach(async (post) => {
-    newMediaCount += await backupMediaFiles(post)
+    try {
+      newMediaCount += await backupMediaFiles(post)
+    } catch (error) {
+      logger.error(
+        `Error backing up media files for post: ${post.post.cid}`,
+        error
+      )
+    }
   })
 
   logger.log(`There are ${newMediaCount} new media files backed up.`)
@@ -87,7 +98,12 @@ export async function runBackup() {
   })
 
   const combinedPosts = Array.from(existingPostsMap.values())
-  await saveBackup(combinedPosts)
+  try {
+    await saveBackup(combinedPosts)
+  } catch (error) {
+    logger.error('Error saving backup:', error)
+    throw new Error('Failed to save backup')
+  }
 
   appData.lastBackup = new Date().toISOString()
   appData.postsOnBsky = newPosts.length
@@ -103,7 +119,12 @@ export async function runBackup() {
     appData.oldestBskyPostDate = null
   }
 
-  await saveAppData(appData)
+  try {
+    await saveAppData(appData)
+  } catch (error) {
+    logger.error('Error saving appData:', error)
+  }
+
   logger.log(
     `Backup complete. There are now ${combinedPosts.length} total posts in backup.`
   )
@@ -113,9 +134,24 @@ export async function runBackup() {
 
 export async function prunePosts(): Promise<void> {
   logger.opening('Prune Process')
+  const settings = await getSettings()
+  if (!settings.pruneAfterMonths || settings.pruneAfterMonths < 1) {
+    logger.log(
+      'Pruning is disabled (pruneAfterMonths is not set or less than 1). Exiting prune process.'
+    )
+    logger.closing('Prune Process')
+    return
+  }
+
+  if (settings.pruneAfterMonths < 3) {
+    logger.log(
+      `Pruning period is set to ${settings.pruneAfterMonths} months, which is less than the minimum of 3 months. Adjusting to 3 months.`
+    )
+    settings.pruneAfterMonths = 3
+  }
 
   const cutoffDate = new Date()
-  cutoffDate.setMonth(cutoffDate.getMonth() - DEFAULT_PRUNE_MONTHS)
+  cutoffDate.setMonth(cutoffDate.getMonth() - settings.pruneAfterMonths)
   if (isNaN(cutoffDate.getTime())) {
     logger.log('Invalid cutoff date calculated.')
     logger.closing('Prune Process')

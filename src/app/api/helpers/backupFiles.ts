@@ -1,18 +1,24 @@
 import path from 'path'
 import { FeedViewPost } from '@/types/bsky'
-import { POST_BACKUP_FILE, BACKUP_MEDIA_PATH } from '@/config/api'
 import { saveJsonToFile, readJsonFromFile, downloadFile } from './utils'
+import { getPaths } from '../services/SettingsService'
+import Logger from './logger'
+
+const logger = new Logger('BackupFile')
 
 export async function openBackup(): Promise<FeedViewPost[]> {
+  // Ensure backup directory exists
+  const { postBackupFile } = await getPaths()
   try {
-    return (await readJsonFromFile<FeedViewPost[]>(POST_BACKUP_FILE)) || []
+    return (await readJsonFromFile<FeedViewPost[]>(postBackupFile)) || []
   } catch (error) {
-    console.error(`Error reading backup file ${POST_BACKUP_FILE}:`, error)
+    logger.error(`Error reading backup file ${postBackupFile}:`, error)
     return []
   }
 }
 
 export async function saveBackup(data: FeedViewPost[]): Promise<void> {
+  const { postBackupFile } = await getPaths()
   // Sort newest to oldest
   data.sort((a, b) => {
     return (
@@ -21,7 +27,7 @@ export async function saveBackup(data: FeedViewPost[]): Promise<void> {
     )
   })
 
-  await saveJsonToFile(data, POST_BACKUP_FILE)
+  await saveJsonToFile(data, postBackupFile)
 }
 
 export async function backupMediaFiles(post: FeedViewPost): Promise<number> {
@@ -42,7 +48,11 @@ export async function backupMediaFiles(post: FeedViewPost): Promise<number> {
       const mediaFilename = getMediaName(post.post, imageUrl, i)
       const postDate = new Date(post.post.indexedAt)
       const year = postDate.getFullYear().toString()
-      const mediaLocation = getMediaLocation(mediaFilename, year, mediaType)
+      const mediaLocation = await getMediaLocation(
+        mediaFilename,
+        year,
+        mediaType
+      )
 
       const write = await downloadFile({
         url: imageUrl,
@@ -63,12 +73,13 @@ export function getMediaType(imageUrl: string): string {
   return imageUrl.substring(atIndex + 1)
 }
 
-export function getMediaLocation(
+export async function getMediaLocation(
   mediaName: string,
   year: string,
   mediaType: string
 ) {
-  return path.join(BACKUP_MEDIA_PATH, year, mediaType, mediaName)
+  const { backupMediaPath } = await getPaths()
+  return path.join(backupMediaPath, year, mediaType, mediaName)
 }
 
 export function getMediaPath(

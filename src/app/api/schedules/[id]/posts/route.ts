@@ -3,6 +3,8 @@ import {
   publishNextPost,
 } from '../../../services/SchedulePostService'
 import { NextRequest, NextResponse } from 'next/server'
+import Logger from '@/app/api/helpers/logger'
+const logger = new Logger('SchPostRoute')
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +13,7 @@ export async function GET(
   try {
     const { id } = await params
     if (!id) {
+      logger.error('Schedule ID is required')
       return NextResponse.json(
         { error: 'Schedule ID is required' },
         { status: 400 }
@@ -18,6 +21,7 @@ export async function GET(
     }
     const lookups = await getScheduleLookups(id)
     if (!lookups) {
+      logger.error('No scheduled lookups found')
       return NextResponse.json(
         { error: 'No scheduled lookups found' },
         { status: 404 }
@@ -25,6 +29,7 @@ export async function GET(
     }
     return NextResponse.json(lookups)
   } catch (error) {
+    logger.error('Failed to fetch scheduled lookups', error)
     return NextResponse.json(
       { error: 'Failed to fetch scheduled lookups' },
       { status: 500 }
@@ -40,6 +45,7 @@ export async function POST(
     const { id } = await params
 
     if (!id) {
+      logger.error('Schedule ID is required')
       return NextResponse.json(
         { error: 'Schedule ID is required' },
         { status: 400 }
@@ -52,6 +58,7 @@ export async function POST(
       message: 'Schedule triggered successfully',
     })
   } catch (error) {
+    logger.error('Failed to trigger schedule', error)
     return NextResponse.json(
       { error: 'Failed to trigger schedule' },
       { status: 500 }

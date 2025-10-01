@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
-import { BACKUP_PATH, BACKUP_MEDIA_PATH } from '@/config/api'
+import { getPaths } from '@/app/api/services/SettingsService'
+import Logger from '../../helpers/logger'
+
+const logger = new Logger('ImagesRoute')
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
+    const { backupPath, backupMediaPath } = await getPaths()
     const resolvedParams = await params
-    const imagePath = path.join(BACKUP_MEDIA_PATH, ...resolvedParams.path)
+    const imagePath = path.join(backupMediaPath, ...resolvedParams.path)
 
     // Security check: ensure the path is within BACKUP_PATH
     const resolvedPath = path.resolve(imagePath)
-    const resolvedBackupPath = path.resolve(BACKUP_PATH)
+    const resolvedBackupPath = path.resolve(backupPath)
 
     if (!resolvedPath.startsWith(resolvedBackupPath)) {
       return new NextResponse('Forbidden', { status: 403 })
@@ -39,7 +43,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('Error serving image:', error)
+    logger.error('Error serving image:', error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 }

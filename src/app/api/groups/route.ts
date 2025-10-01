@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getGroups, getGroupOrder, reorderGroupPosts } from '../services/DraftPostService'
+import { NextResponse } from 'next/server'
+import { getGroups } from '../services/DraftPostService'
+import Logger from '../helpers/logger'
 
+const logger = new Logger('GroupsRoute')
 
 export async function GET(request: Request) {
   try {
@@ -10,6 +12,7 @@ export async function GET(request: Request) {
     }
     return NextResponse.json(groups)
   } catch (error) {
+    logger.error('Failed to fetch groups', error)
     return NextResponse.json(
       {
         error: 'Failed to fetch groups',

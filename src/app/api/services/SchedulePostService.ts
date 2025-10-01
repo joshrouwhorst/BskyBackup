@@ -1,4 +1,4 @@
-import {
+import type {
   ScheduleFrequency,
   Schedule,
   CreateScheduleRequest,
@@ -10,7 +10,7 @@ import {
   getDraftPostsInGroup,
   publishDraftPost,
 } from './DraftPostService'
-import { DraftPost } from '@/types/drafts'
+import type { DraftPost } from '@/types/drafts'
 import Logger from '../helpers/logger'
 import { getNextDatetime } from '../helpers/getNextDatetime'
 import dayjs from 'dayjs'

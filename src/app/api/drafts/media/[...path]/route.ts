@@ -1,26 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
-import { DRAFT_POSTS_PATH } from '@/config/api'
+import { getPaths } from '@/app/api/services/SettingsService'
+import Logger from '@/app/api/helpers/logger'
+
+const logger = new Logger('DraftMediaRoute')
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
+    const { draftPostsPath } = await getPaths()
     const resolvedParams = await params
-    const imagePath = path.join(DRAFT_POSTS_PATH, ...resolvedParams.path)
+    const imagePath = path.join(draftPostsPath, ...resolvedParams.path)
 
     // Security check: ensure the path is within DRAFT_POSTS_PATH
     const resolvedPath = path.resolve(imagePath)
-    const resolvedDraftPath = path.resolve(DRAFT_POSTS_PATH)
+    const resolvedDraftPath = path.resolve(draftPostsPath)
 
     if (!resolvedPath.startsWith(resolvedDraftPath)) {
+      logger.error('Access denied to path:', resolvedPath)
       return new NextResponse('Forbidden', { status: 403 })
     }
 
     // Check if file exists
     if (!fs.existsSync(resolvedPath)) {
+      logger.error('Image not found at path:', resolvedPath)
       return new NextResponse('Image not found', { status: 404 })
     }
 
@@ -39,7 +45,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('Error serving image:', error)
+    logger.error('Error serving image:', error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
@@ -65,19 +71,22 @@ export async function DELETE(
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
+    const { draftPostsPath } = await getPaths()
     const resolvedParams = await params
-    const imagePath = path.join(DRAFT_POSTS_PATH, ...resolvedParams.path)
+    const imagePath = path.join(draftPostsPath, ...resolvedParams.path)
 
     // Security check: ensure the path is within DRAFT_POSTS_PATH
     const resolvedPath = path.resolve(imagePath)
-    const resolvedDraftPath = path.resolve(DRAFT_POSTS_PATH)
+    const resolvedDraftPath = path.resolve(draftPostsPath)
 
     if (!resolvedPath.startsWith(resolvedDraftPath)) {
+      logger.error('Access denied for DELETE request to path:', resolvedPath)
       return new NextResponse('Forbidden', { status: 403 })
     }
 
     // Check if file exists
     if (!fs.existsSync(resolvedPath)) {
+      logger.error('Image not found for DELETE request at path:', resolvedPath)
       return new NextResponse('Image not found', { status: 404 })
     }
 
@@ -86,7 +95,7 @@ export async function DELETE(
 
     return new NextResponse('Media deleted', { status: 200 })
   } catch (error) {
-    console.error('Error serving image:', error)
+    logger.error('Error deleting media:', error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
