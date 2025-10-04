@@ -1,21 +1,21 @@
-"use client";
+'use client'
 
-import React from "react";
-import type { PostData } from "@/types/bsky";
-import type { DraftPost } from "@/types/drafts";
-import Post from "@/components/Post";
+import React from 'react'
+import type { PostData } from '@/types/bsky'
+import type { DraftPost } from '@/types/drafts'
+import Post from '@/components/Post'
 
 interface PostListProps {
   context: () => {
-    posts?: PostData[];
-    drafts?: DraftPost[];
-    isLoading: boolean;
-  };
-  children?: React.ReactNode;
+    posts?: PostData[]
+    drafts?: DraftPost[]
+    isLoading: boolean
+  }
+  children?: React.ReactNode
 }
 
 export default function PostList({ children, context }: PostListProps) {
-  const { posts, drafts, isLoading } = context();
+  const { posts, drafts, isLoading } = context()
 
   if (isLoading) {
     return (
@@ -23,7 +23,7 @@ export default function PostList({ children, context }: PostListProps) {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
         <span className="ml-3 text-gray-600">Loading posts...</span>
       </div>
-    );
+    )
   }
 
   if (
@@ -31,12 +31,12 @@ export default function PostList({ children, context }: PostListProps) {
     (!drafts || drafts.length === 0) &&
     children
   ) {
-    return <div>{children}</div>;
+    return <div>{children}</div>
   } else if (
     (!posts || posts.length === 0) &&
     (!drafts || drafts.length === 0)
   ) {
-    return <div>No posts</div>;
+    return <div>No posts</div>
   }
 
   return (
@@ -48,7 +48,6 @@ export default function PostList({ children, context }: PostListProps) {
           </li>
         ))}
         {drafts?.map((draft) => {
-          console.log("Rendering draft:", draft);
           return (
             <li
               key={draft.meta?.directoryName}
@@ -56,9 +55,9 @@ export default function PostList({ children, context }: PostListProps) {
             >
               <Post draftPost={draft} />
             </li>
-          );
+          )
         })}
       </ul>
     </div>
-  );
+  )
 }

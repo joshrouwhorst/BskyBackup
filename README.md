@@ -4,7 +4,7 @@
 
 **Local backup, drafts & scheduling for Bluesky**
 
-A Next.js application for viewing and managing your Bluesky social media backup data, create draft posts, and schedule them to be published, all **local** and **private**.
+A Next.js application for viewing and managing your [Bluesky](https://bsky.app) social media backup data, create draft posts, and schedule them to be published, all **local** and **private**.
 
 ## Project Overview
 
@@ -76,14 +76,6 @@ Test files are located alongside source files, typically in `__tests__` director
 If you add new features, consider adding or updating test files to cover your changes. For more information on Jest configuration, see `jest.config.ts`.
 
 ## Docker
-
-```shell
-docker build -t bsky-backup:latest .
-```
-
-```shell
-docker run -d --name bsky-backup -p 3000:3000 bsky-backup:latest
-```
 
 ```shell
  docker buildx build --platform linux/amd64,linux/arm64 --build-arg TARGETARCH=x64 --build-arg TARGETARCH=arm64 -t joshrouwhorst/bsky-backup:latest --push .

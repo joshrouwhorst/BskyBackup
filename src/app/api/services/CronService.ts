@@ -1,86 +1,91 @@
 import Logger from '@/app/api/helpers/logger'
 import {
   getSchedules,
+  updateSchedule,
   getNextTriggerTime,
   publishNextPost,
 } from '../services/SchedulePostService'
 import { cron } from '@/app/api/helpers/cron'
-import { Schedule } from '@/types/scheduler'
+
+const CRON_MINUTES = 5
+const TASK_ID = `task-cron`
 
 const logger = new Logger('CronService')
 init()
 
 async function init() {
   logger.log('Initializing Cron Service...')
-  await scheduleNextPosts()
+  await ensureCronIsRunning()
 }
 
-export async function getScheduledGroups(): Promise<string[]> {
-  const schedules = await getSchedules()
-  const groups: string[] = []
-  for (const schedule of schedules) {
-    if (!schedule.group || !schedule.id || !schedule.isActive) continue // Skip if no group defined
-    const id = `schedule-${schedule.group}`
-    if (!cron.hasTask(id)) continue // Task not already scheduled
-    groups.push(schedule.group)
+export async function ensureCronIsRunning() {
+  if (!cron.hasTask(TASK_ID)) {
+    logger.log(
+      `Adding cron job to run at ${new Date(
+        Date.now() + CRON_MINUTES * 60 * 1000
+      ).toISOString()}`
+    )
+    cron.addTask(
+      TASK_ID,
+      () => {
+        cronJob()
+      },
+      CRON_MINUTES * 60 * 1000
+    )
+  } else {
+    logger.log('Cron job already running')
   }
-  return groups
 }
 
-export async function scheduleNextPosts() {
-  const schedules = await getSchedules()
-  for (const schedule of schedules) {
-    if (!schedule.group || !schedule.id || !schedule.isActive) continue // Skip if no group defined
-    const id = `schedule-${schedule.group}`
-    if (cron.hasTask(id)) continue // Task already scheduled
+async function cronJob() {
+  await postIfNeeded()
+  if (cron.hasTask(TASK_ID)) cron.removeTask(TASK_ID)
+  logger.log(
+    `Re-adding cron job to run at ${new Date(
+      Date.now() + CRON_MINUTES * 60 * 1000
+    ).toISOString()}`
+  )
+  cron.addTask(
+    TASK_ID,
+    () => {
+      cronJob()
+    },
+    CRON_MINUTES * 60 * 1000
+  )
+}
 
-    let nextRun = getNextTriggerTime(
-      schedule.lastTriggered ? new Date(schedule.lastTriggered) : new Date(),
+export async function postIfNeeded() {
+  const schedules = await getSchedules()
+  const now = new Date()
+  for (const schedule of schedules) {
+    if (!schedule.isActive || !schedule.id || !schedule.group) continue
+
+    if (!schedule.lastTriggered) {
+      logger.log(
+        `Schedule ${schedule.id} has never been triggered. Setting lastTriggered to now.`
+      )
+      await updateSchedule(schedule.id, { lastTriggered: now.toISOString() })
+      schedule.lastTriggered = now.toISOString()
+    }
+
+    const nextRun = getNextTriggerTime(
+      new Date(schedule.lastTriggered),
       schedule.frequency
     )
 
-    if (nextRun < new Date()) {
-      nextRun = getNextTriggerTime(new Date(), schedule.frequency)
-    }
-
-    const now = new Date()
-    const success = cron.addTask(
-      id,
-      async () => {
-        await job(schedule)
-      },
-      nextRun.getTime() - now.getTime()
-    )
-    if (success)
+    if (nextRun <= now) {
       logger.log(
-        `Scheduled next post for group ${
+        `Triggering scheduled post for group ${
           schedule.group
-        } at ${nextRun.toISOString()}`
+        } (scheduled for ${nextRun.toISOString()})`
       )
+      await publishNextPost(schedule.id)
+      await updateSchedule(schedule.id, { lastTriggered: now.toISOString() })
+    }
   }
 }
 
 export function unscheduleAll() {
   cron.clearAll()
   logger.log('Cleared all scheduled tasks')
-}
-
-async function job(schedule: Schedule) {
-  try {
-    if (schedule.id) {
-      await publishNextPost(schedule.id)
-    } else {
-      logger.error(
-        `Cannot trigger scheduled post: missing schedule.id for group ${schedule.group}`
-      )
-    }
-  } catch (error) {
-    logger.error(
-      `Error triggering scheduled post for group ${schedule.group}`,
-      error
-    )
-  } finally {
-    cron.removeTask(`schedule-${schedule.group}`)
-    await scheduleNextPosts() // Reschedule the next post
-  }
 }

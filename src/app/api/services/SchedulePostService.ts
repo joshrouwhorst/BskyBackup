@@ -16,6 +16,7 @@ import { getNextDatetime } from '../helpers/getNextDatetime'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
+import { DEFAULT_GROUP } from '@/config/main'
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
@@ -77,7 +78,7 @@ export async function createSchedule(
     isActive: request.isActive ?? true,
     createdAt: new Date().toISOString(),
     platforms: request.platforms,
-    group: request.group || 'default', // <-- Add this line
+    group: request.group || DEFAULT_GROUP,
   }
 
   const updatedSchedules = [...schedules, schedule]

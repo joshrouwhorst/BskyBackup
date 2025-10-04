@@ -1,8 +1,13 @@
 import { DraftPost, CreateDraftInput } from '@/types/drafts'
 import { useCallback, useEffect, useState } from 'react'
 
+export interface DraftFilters {
+  group: string | null
+  searchTerm: string | null
+}
+
 interface DraftHookContext {
-  fetchDrafts: () => Promise<DraftPost[]>
+  fetchDrafts: (filters?: DraftFilters) => Promise<DraftPost[]>
   createDraft: (input: CreateDraftInput) => Promise<DraftPost>
   getDraftsInGroup: (group: string) => Promise<DraftPost[]>
   getDraft: (id: string, group?: string) => Promise<DraftPost | null>
@@ -17,8 +22,18 @@ interface DraftHookContext {
 }
 
 export function useDrafts(): DraftHookContext {
-  const fetchDrafts = useCallback(async () => {
-    const response = await fetch('/api/drafts')
+  const fetchDrafts = useCallback(async (filters?: DraftFilters) => {
+    const query = new URLSearchParams()
+    if (filters?.group) {
+      query.append('group', filters.group)
+    }
+    if (filters?.searchTerm) {
+      query.append('searchTerm', filters.searchTerm)
+    }
+    const url = query.toString()
+      ? `/api/drafts?${query.toString()}`
+      : '/api/drafts'
+    const response = await fetch(url)
     if (!response.ok) {
       throw new Error('Failed to fetch draft data')
     }

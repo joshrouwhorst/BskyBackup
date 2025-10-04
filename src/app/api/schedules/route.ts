@@ -4,7 +4,7 @@ import {
   deleteSchedule,
   getSchedules,
 } from '../services/SchedulePostService'
-import { scheduleNextPosts, unscheduleAll } from '../services/CronService'
+import { ensureCronIsRunning } from '../services/CronService'
 import { NextRequest, NextResponse } from 'next/server'
 import Logger from '@/app/api/helpers/logger'
 
@@ -12,7 +12,7 @@ const logger = new Logger('ScheduleRoute')
 
 export async function GET(request: NextRequest) {
   try {
-    await scheduleNextPosts() // Ensure cron job is running to handle schedules
+    await ensureCronIsRunning() // Ensure cron job is running to handle schedules
     const { searchParams } = new URL(request.url)
     const scheduleId = searchParams.get('id')
 
@@ -58,8 +58,6 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { id, ...updateData } = body
     const schedule = await updateSchedule(id, updateData)
-    unscheduleAll()
-    await scheduleNextPosts() // Reschedule cron jobs after update
     return NextResponse.json(schedule)
   } catch (error) {
     logger.error('Failed to update schedule', error)

@@ -304,7 +304,7 @@ export class PostsStore {
     } catch (err) {
       logger.error(
         `Failed to read post directory ${postDirName}${
-          group ? `in group ${group}` : ''
+          group ? ` in group ${group}` : ''
         }: ${err}`
       )
       return null
@@ -407,7 +407,12 @@ export class PostsStore {
     const results: DraftPost[] = []
 
     for (const entry of entries) {
-      if (entry.isDirectory()) {
+      if (
+        entry.isDirectory() &&
+        !entry.name.startsWith('@eaDir') &&
+        !entry.name.startsWith('.') &&
+        !entry.name.startsWith('$')
+      ) {
         // See if there is a meta.json file here
         const metaPath = path.join(this.root, entry.name, META_FILENAME)
         try {
@@ -424,6 +429,12 @@ export class PostsStore {
           })
           const postDirs = groupEntries
             .filter((d) => d.isDirectory())
+            .filter(
+              (d) =>
+                !d.name.startsWith('@eaDir') &&
+                !d.name.startsWith('.') &&
+                !d.name.startsWith('$')
+            )
             .map((d) => d.name)
 
           for (const postDirName of postDirs) {
@@ -450,7 +461,12 @@ export class PostsStore {
     const groups: string[] = []
 
     for (const entry of entries) {
-      if (entry.isDirectory()) {
+      if (
+        entry.isDirectory() &&
+        !entry.name.startsWith('@eaDir') &&
+        !entry.name.startsWith('.') &&
+        !entry.name.startsWith('$')
+      ) {
         // Check if there is a meta.json file directly inside this directory
         const metaPath = path.join(this.root, entry.name, META_FILENAME)
 

@@ -1,14 +1,16 @@
-import DraftPostList from "@/components/DraftPostList";
-import { Callout } from "@/components/ui/callout";
-import { LinkButton } from "@/components/ui/forms";
-import DraftsProvider from "@/providers/DraftsProvider";
-import { Plus } from "lucide-react";
+import DraftListFilters from '@/components/DraftListFilters'
+import DraftPostList from '@/components/DraftPostList'
+import { Callout } from '@/components/ui/callout'
+import { LinkButton } from '@/components/ui/forms'
+import DraftsProvider from '@/providers/DraftsProvider'
+import { Plus } from 'lucide-react'
 
 export default async function Drafts() {
   return (
     <DraftsProvider>
       <div className="flex flex-col md:flex-row justify-center gap-4">
         <main>
+          <DraftListFilters />
           <DraftPostList />
         </main>
         <aside className="block md:w-1/4">
@@ -44,5 +46,5 @@ export default async function Drafts() {
         </aside>
       </div>
     </DraftsProvider>
-  );
+  )
 }

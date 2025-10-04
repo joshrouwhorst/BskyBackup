@@ -1,20 +1,23 @@
-import type { Metadata } from "next";
+import type { Metadata } from 'next'
 
 // @ts-ignore
-import "./globals.css";
-import HeaderNav from "@/components/HeaderNav";
-import SettingsProvider from "@/providers/SettingsProvider";
-import AppDataProvider from "@/providers/AppDataProvider";
+import './globals.css'
+import HeaderNav from '@/components/HeaderNav'
+import SettingsProvider from '@/providers/SettingsProvider'
+import AppDataProvider from '@/providers/AppDataProvider'
 
 export const metadata: Metadata = {
-  title: "BskyBackup",
-  description: "A simple app to backup and manage your Bluesky posts locally.",
-};
+  title: 'BskyBackup',
+  description: 'A simple app to backup and manage your Bluesky posts locally.',
+  icons: {
+    icon: '/favicon.ico',
+  },
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html lang="en">
@@ -28,5 +31,5 @@ export default function RootLayout({
         </div>
       </body>
     </html>
-  );
+  )
 }
