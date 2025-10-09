@@ -5,7 +5,7 @@ type Size = 'xxs' | 'xs' | 'sm' | 'md' | 'lg'
 type Color = 'primary' | 'secondary' | 'tertiary' | 'danger'
 
 const baseButtonClasses =
-  'px-3 py-4 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed items-center justify-center flex gap-2'
+  'font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed items-center justify-center flex gap-2'
 
 const baseLinkClasses = `${baseButtonClasses} no-underline inline-flex`
 
@@ -13,13 +13,13 @@ const getColorClasses = (variant: Variant, color: Color) => {
   if (variant === 'icon') {
     return {
       primary:
-        'bg-transparent hover:bg-blue-100 dark:hover:bg-gray-900 dark:hover:text-blue-400 text-blue-600 dark:text-blue-400 focus:ring-blue-500 p-1',
+        'bg-transparent hover:bg-blue-100 dark:hover:bg-gray-900 dark:hover:text-blue-400 text-blue-600 dark:text-blue-400 focus:ring-blue-500',
       secondary:
-        'bg-transparent hover:bg-gray-100 dark:hover:bg-gray-300 dark:hover:text-gray-800 text-gray-700 dark:text-gray-300 focus:ring-gray-500 p-1',
+        'bg-transparent hover:bg-gray-100 dark:hover:bg-gray-300 dark:hover:text-gray-800 text-gray-700 dark:text-gray-300 focus:ring-gray-500',
       tertiary:
-        'bg-transparent hover:bg-green-100 dark:hover:bg-green-900 text-green-600 dark:text-green-400 focus:ring-green-500 p-1',
+        'bg-transparent hover:bg-green-100 dark:hover:bg-green-900 text-green-600 dark:text-green-400 focus:ring-green-500',
       danger:
-        'bg-transparent hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400 focus:ring-red-500 p-1',
+        'bg-transparent hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400 focus:ring-red-500',
     }[color]
   } else if (variant === 'primary') {
     return {
@@ -54,24 +54,24 @@ const getColorClasses = (variant: Variant, color: Color) => {
   }
 }
 
-const sizeClasses: Record<Size, string> = {
-  xxs: 'px-0 py-0 text-[6pt]',
-  xs: 'px-0 py-0',
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-6 py-3 text-base',
-}
+const getSizeClasses = (variant: Variant, size: string) => {
+  if (variant === 'icon') return 'p-2 rounded-full text-base leading-none flex'
 
-const getSizeClasses = (variant: Variant, size: Size) =>
-  variant === 'icon'
-    ? 'p-1 rounded-full text-base leading-none flex'
-    : sizeClasses[size]
+  switch (size) {
+    case 'tall':
+      return 'px-3 py-4 text-sm'
+    case 'md':
+    default:
+      return 'px-4 py-2 text-sm'
+  }
+}
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant
-  size?: Size
+  size?: 'md' | 'tall'
   color?: Color
 }
+
 export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'md',

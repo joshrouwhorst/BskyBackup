@@ -11,8 +11,11 @@ import Logger from '@/app/api/helpers/logger'
 import { formatDate } from '@/helpers/utils'
 import { getAppData, saveAppData } from '../helpers/appData'
 import { getSettings } from './SettingsService'
+import { getCache, setCache } from './CacheService'
 
 const logger = new Logger('BackupServ')
+const CACHE_ID = 'backupPosts'
+let _cache = getCache<PostData[] | null>(CACHE_ID)
 
 init()
 function init() {
@@ -20,8 +23,14 @@ function init() {
 }
 
 export async function getBackup(): Promise<PostData[]> {
+  if (_cache) return _cache
+  logger.log('Loading backup from disk.')
+  setCache(CACHE_ID, null)
+  _cache = null
   const posts = await openBackup()
-  return posts.map(transformFeedViewPostToPostData)
+  const output = posts.map(transformFeedViewPostToPostData)
+  _cache = setCache(CACHE_ID, output)
+  return output
 }
 
 export async function runBackup() {
@@ -50,6 +59,10 @@ export async function runBackup() {
   } else {
     logger.log('No previous backup found.')
   }
+
+  // Clear cache
+  setCache(CACHE_ID, null)
+  _cache = null
 
   // Load existing backup posts
 

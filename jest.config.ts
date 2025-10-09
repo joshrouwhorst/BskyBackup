@@ -155,6 +155,10 @@ const config: Config = {
   // Options that will be passed to the testEnvironment
   // testEnvironmentOptions: {},
 
+  // The default timeout interval for tests in milliseconds (5000ms = 5 seconds is default)
+  // Set to 0 to disable timeout completely, or increase for debugging
+  testTimeout: 0, // Disables timeout completely - useful for debugging
+
   // Adds a location field to test results
   // testLocationInResults: false,
 

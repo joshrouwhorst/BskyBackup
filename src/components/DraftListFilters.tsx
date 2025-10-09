@@ -29,6 +29,7 @@ export default function DraftListFilters() {
         onClick={clearFilters}
         title="Clear Filters"
         variant="primary"
+        size="tall"
         color="danger"
       >
         <X />

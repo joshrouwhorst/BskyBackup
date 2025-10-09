@@ -4,6 +4,9 @@ import { LOGS_PATH } from '@/config/main'
 import { formatDate } from '@/helpers/utils'
 
 const SHOW_OBJECTS_IN_LOGS = false // Set to false to disable logging objects
+const DELETE_LOGS_OLDER_THAN_DAYS = 30
+
+let lastPurgedLogs: Date | null = null
 
 function getLogFilePath(): string {
   const today = new Date()
@@ -27,12 +30,43 @@ export default class Logger {
 
   constructor(name: string) {
     this.name = padName(name)
+    this.removeOldLogs()
+  }
+
+  private removeOldLogs() {
+    // Check if we purged in the last 24 hours, if so skip
+    if (
+      lastPurgedLogs &&
+      Date.now() - lastPurgedLogs.getTime() < 24 * 60 * 60 * 1000
+    ) {
+      return null
+    }
+
+    // Check log directory for log files older than DELETE_LOGS_OLDER_THAN_DAYS and delete them
+    const files = fs.readdirSync(LOGS_PATH)
+    const now = Date.now()
+    for (const file of files) {
+      if (file.startsWith('backup-log-') && file.endsWith('.txt')) {
+        const datePart = file.slice(11, 21) // Extract date part
+        const fileDate = new Date(datePart)
+        if (!isNaN(fileDate.getTime())) {
+          const ageInDays = (now - fileDate.getTime()) / (1000 * 60 * 60 * 24)
+          if (ageInDays > DELETE_LOGS_OLDER_THAN_DAYS) {
+            const filePath = path.join(LOGS_PATH, file)
+            fs.unlinkSync(filePath)
+          }
+        }
+      }
+    }
+
+    lastPurgedLogs = new Date()
   }
 
   private appendLine(message: string) {
     const line = `${formatDate(new Date())} | ${this.name} | ${message}\n`
     fs.appendFileSync(getLogFilePath(), line, 'utf-8')
     console.log(line.trim())
+    this.removeOldLogs()
   }
 
   blank() {
@@ -68,7 +102,8 @@ export default class Logger {
 
   error(message: string, error?: any) {
     this.appendLine(`ERROR: ${message}`)
-    if (error && SHOW_OBJECTS_IN_LOGS) {
+    if (error) {
+      // Always show error objects in logs
       this.appendLine(
         `ERROR DETAILS: ${JSON.stringify(error, getCircularReplacer(), 2)}`
       )

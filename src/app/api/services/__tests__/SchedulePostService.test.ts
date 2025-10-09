@@ -16,6 +16,10 @@ import {
   publishNextPost,
 } from '../SchedulePostService'
 
+jest.mock('@/config/main', () => ({
+  DEFAULT_GROUP: 'default',
+}))
+
 jest.mock('../../helpers/appData', () => ({
   getAppData: jest.fn(),
   saveAppData: jest.fn(),

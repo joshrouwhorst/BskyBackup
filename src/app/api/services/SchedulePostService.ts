@@ -17,6 +17,7 @@ import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import { DEFAULT_GROUP } from '@/config/main'
+import { wait } from '@/helpers/utils'
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
@@ -246,20 +247,46 @@ export async function publishNextPost(scheduleId: string): Promise<void> {
     schedule.platforms = ['bluesky']
   }
 
-  try {
+  let attempts = 0
+  const maxAttempts = 3
+  let successful = false
+  while (attempts < maxAttempts) {
+    try {
+      logger.log(
+        `Posting ${post.meta.directoryName} for schedule ${
+          schedule.name
+        } (Attempt ${attempts + 1})`
+      )
+      await publishDraftPost(post.meta.directoryName, schedule.platforms)
+      successful = true
+      break // Success, exit loop
+    } catch (error) {
+      attempts++
+      logger.error(
+        `Failed to publish ${post.meta.directoryName} for schedule ${schedule.name} (Attempt ${attempts}):`,
+        error
+      )
+
+      if (attempts >= maxAttempts) {
+        logger.error(
+          `Giving up after ${maxAttempts} attempts to publish ${post.meta.directoryName} for schedule ${schedule.name}.`
+        )
+      } else {
+        await wait(5000) // Wait 5 seconds before retrying
+      }
+    }
+  }
+
+  if (!successful) {
+    logger.log(`Successfully posted draft ${post.meta.directoryName}`)
+  } else {
     logger.log(
-      `Posting ${post.meta.directoryName} for schedule ${schedule.name}`
-    )
-    await publishDraftPost(post.meta.directoryName, schedule.platforms)
-  } catch (error) {
-    logger.error(
-      `Failed to publish ${post.meta.directoryName} for schedule ${schedule.name}:`,
-      error
+      `Failed to post draft ${post.meta.directoryName} after ${maxAttempts} attempts.`
     )
   }
 
-  logger.log(`Successfully posted draft ${post.meta.directoryName}`)
   await updateScheduleData({ schedules })
+
   logger.closing('Publish Next Post Process')
   return
 }

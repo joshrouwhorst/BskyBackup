@@ -1,9 +1,9 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
-"use client";
+'use client'
 
-import React from "react";
-import { PostData, ReplyData } from "@/types/bsky";
-import { DraftPost } from "@/types/drafts";
+import React from 'react'
+import { PostData, ReplyData } from '@/types/bsky'
+import { DraftPost } from '@/types/drafts'
 import {
   Heart,
   MessageCircle,
@@ -16,31 +16,31 @@ import {
   CopyPlus,
   CloudUpload,
   FolderPen,
-} from "lucide-react";
-import { PostDisplayData } from "@/types/types";
-import PostMediaCarousel from "./PostMediaCarousel";
-import { Button, LinkButton } from "./ui/forms";
-import { useDraftContext } from "@/providers/DraftsProvider";
-import Image from "next/image";
-import { useSettingsContext } from "@/providers/SettingsProvider";
+} from 'lucide-react'
+import { PostDisplayData } from '@/types/types'
+import PostMediaCarousel from './PostMediaCarousel'
+import { Button, LinkButton } from './ui/forms'
+import { useDraftContext } from '@/providers/DraftsProvider'
+import Image from 'next/image'
+import { useSettingsContext } from '@/providers/SettingsProvider'
 
-let BSKY_DISPLAY_NAME = "Your Display Name"; // TODO: Get this from app data
-let BSKY_IDENTIFIER = "yourusername.bsky.social";
+let BSKY_DISPLAY_NAME = 'Your Display Name' // TODO: Get this from app data
+let BSKY_IDENTIFIER = 'yourusername.bsky.social'
 
 interface PostProps {
-  variant?: "full" | "compact";
-  postData?: PostData;
-  draftPost?: DraftPost;
-  displayData?: PostDisplayData;
+  variant?: 'full' | 'compact'
+  postData?: PostData
+  draftPost?: DraftPost
+  displayData?: PostDisplayData
 }
 
 function getEditLink(draftId: string) {
-  return `/drafts/${draftId}`;
+  return `/drafts/${draftId}`
 }
 
 function getDisplayDataFromPostData(postData: PostData): PostDisplayData {
   return {
-    text: postData.post.record?.text || "",
+    text: postData.post.record?.text || '',
     author: postData.post.author,
     indexedAt: postData.post.indexedAt,
     likeCount: postData.post.likeCount,
@@ -56,7 +56,7 @@ function getDisplayDataFromPostData(postData: PostData): PostDisplayData {
       : undefined,
     video: postData.post.embed?.record
       ? {
-          url: postData.post.embed.record?.thumbnail || "",
+          url: postData.post.embed.record?.thumbnail || '',
           width: postData.post.embed.record?.aspectRatio?.width || 0,
           height: postData.post.embed.record?.aspectRatio?.height || 0,
           size: 0, // Size not provided in embed data
@@ -72,12 +72,12 @@ function getDisplayDataFromPostData(postData: PostData): PostDisplayData {
         ? getDisplayDataFromPostData({ post: postData.reply.root })
         : undefined,
     postId: postData.post?.cid,
-  } as PostDisplayData;
+  } as PostDisplayData
 }
 
 function getDisplayDataFromDraft(draftPost: DraftPost): PostDisplayData {
   return {
-    text: draftPost.meta.text || "",
+    text: draftPost.meta.text || '',
     author: {
       displayName: BSKY_DISPLAY_NAME, // TODO: Get this from bluesky profile data
       handle: BSKY_IDENTIFIER,
@@ -101,7 +101,7 @@ function getDisplayDataFromDraft(draftPost: DraftPost): PostDisplayData {
     draftId: draftPost.meta.directoryName,
     group: draftPost.group,
     slug: draftPost.meta.slug,
-  } as PostDisplayData;
+  } as PostDisplayData
 }
 
 export default function Post({
@@ -111,40 +111,40 @@ export default function Post({
   displayData,
 }: PostProps) {
   const { deleteDraft, duplicateDraft, refresh, publishDraft } =
-    useDraftContext();
-  const { settings } = useSettingsContext();
+    useDraftContext()
+  const { settings } = useSettingsContext()
 
   if (settings) {
-    BSKY_DISPLAY_NAME = settings.bskyDisplayName || BSKY_DISPLAY_NAME;
-    BSKY_IDENTIFIER = settings.bskyIdentifier || BSKY_IDENTIFIER;
+    BSKY_DISPLAY_NAME = settings.bskyDisplayName || BSKY_DISPLAY_NAME
+    BSKY_IDENTIFIER = settings.bskyIdentifier || BSKY_IDENTIFIER
   }
 
-  if (!variant) variant = "full";
+  if (!variant) variant = 'full'
 
   // Handle conversions
   if (!displayData && postData) {
-    displayData = getDisplayDataFromPostData(postData);
+    displayData = getDisplayDataFromPostData(postData)
   } else if (!displayData && draftPost) {
-    displayData = getDisplayDataFromDraft(draftPost);
+    displayData = getDisplayDataFromDraft(draftPost)
   }
 
-  const item = displayData;
+  const item = displayData
 
   if (!item) {
-    return <div>No post data available</div>;
+    return <div>No post data available</div>
   }
 
   // Format text with links and mentions
   const formatText = (text: string) => {
     return text.split(/(\s+)/).map((part, index) => {
       // Handle newlines
-      if (part.includes("\n")) {
-        return part.split("\n").map((line, lineIndex) => (
+      if (part.includes('\n')) {
+        return part.split('\n').map((line, lineIndex) => (
           <React.Fragment key={`${index}-${lineIndex}`}>
             {line}
-            {lineIndex < part.split("\n").length - 1 && <br />}
+            {lineIndex < part.split('\n').length - 1 && <br />}
           </React.Fragment>
-        ));
+        ))
       }
       // Handle URLs
       if (part.match(/^https?:\/\/\S+/)) {
@@ -158,7 +158,7 @@ export default function Post({
           >
             {part}
           </a>
-        );
+        )
       }
       // Handle mentions
       if (part.match(/^@\w+/)) {
@@ -166,7 +166,7 @@ export default function Post({
           <span key={index} className="text-blue-500">
             {part}
           </span>
-        );
+        )
       }
       // Handle hashtags
       if (part.match(/^#\w+/)) {
@@ -174,40 +174,40 @@ export default function Post({
           <span key={index} className="text-blue-500">
             {part}
           </span>
-        );
+        )
       }
-      return part;
-    });
-  };
+      return part
+    })
+  }
 
-  const text = formatText(item.text);
-  const itemJson = JSON.stringify(item, null, 2);
+  const text = formatText(item.text)
+  const itemJson = JSON.stringify(item, null, 2)
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(itemJson);
+      await navigator.clipboard.writeText(itemJson)
     } catch (err) {
-      console.error("Failed to copy to clipboard:", err);
+      console.error('Failed to copy to clipboard:', err)
     }
-  };
+  }
 
   const handleDeleteDraft = async (post: PostDisplayData) => {
     if (
       post.draftId &&
-      confirm("Are you sure you want to delete this draft?")
+      confirm('Are you sure you want to delete this draft?')
     ) {
-      await deleteDraft(post.draftId);
-      await refresh();
+      await deleteDraft(post.draftId)
+      await refresh()
     }
-  };
+  }
 
   const handleDuplicateDraft = async (post: PostDisplayData) => {
     if (post.draftId) {
-      const newPost = await duplicateDraft(post.draftId);
+      const newPost = await duplicateDraft(post.draftId)
       if (newPost)
-        window.location.href = `/drafts/${newPost.meta.directoryName}`;
+        window.location.href = `/drafts/${newPost.meta.directoryName}`
     }
-  };
+  }
 
   function compactPostView({ displayData }: { displayData: PostDisplayData }) {
     return (
@@ -216,7 +216,7 @@ export default function Post({
         <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400 text-lg font-bold">
           {displayData.author?.displayName
             ? displayData.author.displayName[0]
-            : displayData.author?.handle?.[0]?.toUpperCase() || "?"}
+            : displayData.author?.handle?.[0]?.toUpperCase() || '?'}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -239,12 +239,12 @@ export default function Post({
             <span className="text-gray-400 text-xs ml-auto">
               {displayData.indexedAt
                 ? new Date(displayData.indexedAt).toLocaleDateString()
-                : ""}
+                : ''}
             </span>
           </div>
           <div className="text-sm text-gray-900 dark:text-gray-100 mt-1 line-clamp-2 break-words">
             {displayData.text.length > 120
-              ? displayData.text.slice(0, 120) + "…"
+              ? displayData.text.slice(0, 120) + '…'
               : displayData.text}
             {displayData.images && displayData.images.length > 0 && (
               <div className="mt-2 relative flex flex-row gap-1">
@@ -269,7 +269,7 @@ export default function Post({
                 <Heart className="w-3 h-3" /> {displayData.likeCount || 0}
               </span>
               <span className="flex items-center gap-1">
-                <MessageCircle className="w-3 h-3" />{" "}
+                <MessageCircle className="w-3 h-3" />{' '}
                 {displayData.replyCount || 0}
               </span>
               <span className="flex items-center gap-1">
@@ -279,16 +279,16 @@ export default function Post({
           </div>
         </div>
       </div>
-    );
+    )
   }
 
-  if (variant === "compact") {
-    return compactPostView({ displayData: item });
+  if (variant === 'compact') {
+    return compactPostView({ displayData: item })
   }
 
   return (
     <div className="p-4 border border-gray-300 rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 shadow-md text-black dark:text-white">
-      <div className="flex items-start justify-between mb-2">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="font-semibold">
             {item.author?.displayName || item.author?.handle}
@@ -311,9 +311,9 @@ export default function Post({
               variant="icon"
               color="tertiary"
               onClick={async () => {
-                if (confirm("Are you sure you want to publish this draft?")) {
-                  await publishDraft(item.draftId!);
-                  await refresh();
+                if (confirm('Are you sure you want to publish this draft?')) {
+                  await publishDraft(item.draftId!)
+                  await refresh()
                 }
               }}
               title="Publish post"
@@ -378,11 +378,11 @@ export default function Post({
             <Heart className="w-4 h-4" color="red" /> {item.likeCount || 0}
           </span>
           <span className="text-gray-500 text-sm flex items-center gap-1">
-            <MessageCircle className="w-4 h-4" color="teal" />{" "}
+            <MessageCircle className="w-4 h-4" color="teal" />{' '}
             {item.replyCount || 0}
           </span>
           <span className="text-gray-500 text-sm flex items-center gap-1">
-            <Repeat2 className="w-4 h-4" color="green" />{" "}
+            <Repeat2 className="w-4 h-4" color="green" />{' '}
             {item.repostCount || 0}
           </span>
         </div>
@@ -409,17 +409,17 @@ export default function Post({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 interface ReplyParentsProps {
-  parent?: PostDisplayData;
-  root?: PostDisplayData;
+  parent?: PostDisplayData
+  root?: PostDisplayData
 }
 
 function ReplyParents({ parent, root }: ReplyParentsProps) {
   if (!parent || !root) {
-    return null;
+    return null
   }
 
   return (
@@ -427,28 +427,28 @@ function ReplyParents({ parent, root }: ReplyParentsProps) {
       {root && (
         <div className="mb-2">
           <span className="text-gray-500 text-sm">
-            Root post by{" "}
+            Root post by{' '}
             <span className="text-blue-500">@{root.author?.handle}</span>
           </span>
           <div className="text-gray-600 dark:text-gray-400 text-sm mt-1 italic">
-            "{root?.text || ""}"
+            "{root?.text || ''}"
           </div>
         </div>
       )}
       {parent && (
         <div className="mb-2">
           <span className="text-gray-500 text-sm">
-            Parent post by{" "}
+            Parent post by{' '}
             <span className="text-blue-500">@{parent.author?.handle}</span>
           </span>
           <div className="text-gray-600 dark:text-gray-400 text-sm mt-1 italic">
-            "{parent.text || ""}"
+            "{parent.text || ''}"
           </div>
         </div>
       )}
     </div>
-  );
+  )
 }
 
-export { ReplyParents };
-export type { PostDisplayData };
+export { ReplyParents }
+export type { PostDisplayData }

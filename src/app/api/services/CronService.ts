@@ -40,11 +40,7 @@ export async function ensureCronIsRunning() {
 async function cronJob() {
   await postIfNeeded()
   if (cron.hasTask(TASK_ID)) cron.removeTask(TASK_ID)
-  logger.log(
-    `Re-adding cron job to run at ${new Date(
-      Date.now() + CRON_MINUTES * 60 * 1000
-    ).toISOString()}`
-  )
+
   cron.addTask(
     TASK_ID,
     () => {

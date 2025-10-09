@@ -9,7 +9,7 @@ export const DATA_LOCATION =
 export const APP_DATA_FILE = `${DATA_LOCATION}/app-data/app-data`
 export const LOGS_PATH = `${DATA_LOCATION}/logs`
 
-export const getPaths = async () => {
+export const getPaths = () => {
   return {
     mainDataLocation: DATA_LOCATION,
     draftPostsPath: `${DATA_LOCATION}/draft-posts`,
