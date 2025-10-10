@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { LOGS_PATH } from '@/config/main'
 import { formatDate } from '@/helpers/utils'
+import { ensureDir } from './utils'
 
 const SHOW_OBJECTS_IN_LOGS = false // Set to false to disable logging objects
 const DELETE_LOGS_OLDER_THAN_DAYS = 30
@@ -43,6 +44,7 @@ export default class Logger {
     }
 
     // Check log directory for log files older than DELETE_LOGS_OLDER_THAN_DAYS and delete them
+    if (!fs.existsSync(LOGS_PATH)) return
     const files = fs.readdirSync(LOGS_PATH)
     const now = Date.now()
     for (const file of files) {

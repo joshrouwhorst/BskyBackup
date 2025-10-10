@@ -1,1 +1,1 @@
-GET http://localhost:3000/api/util
+POST http://localhost:3000/api/util?init=true
