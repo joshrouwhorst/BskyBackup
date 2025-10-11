@@ -51,10 +51,10 @@ describe('getNextTriggerTime', () => {
   it('should calculate next trigger time', () => {
     const freq: ScheduleFrequency = {
       interval: { every: 1, unit: 'days' },
-      timeOfDay: '08:00',
+      timesOfDay: ['08:00'],
       timeZone: 'UTC',
-      dayOfMonth: undefined,
-      dayOfWeek: undefined,
+      daysOfMonth: [],
+      daysOfWeek: [],
     }
     const lastRun = new Date('2025-09-23T10:00:00Z')
     const next = getNextTriggerTime(lastRun, freq)
@@ -77,7 +77,7 @@ describe('Schedule CRUD', () => {
       group: 'default',
       frequency: {
         interval: { every: 1, unit: 'days' },
-        timeOfDay: '08:00',
+        timesOfDay: ['08:00'],
         timeZone: 'UTC',
       },
       platforms: ['bluesky'],
@@ -93,7 +93,7 @@ describe('Schedule CRUD', () => {
       name: 'Test',
       frequency: {
         interval: { every: 1, unit: 'days' },
-        timeOfDay: '08:00',
+        timesOfDay: ['08:00'],
         timeZone: 'UTC',
       },
       isActive: true,
@@ -115,7 +115,7 @@ describe('Schedule CRUD', () => {
       name: 'Test',
       frequency: {
         interval: { every: 1, unit: 'days' },
-        timeOfDay: '08:00',
+        timesOfDay: ['08:00'],
         timeZone: 'UTC',
       },
       isActive: true,
@@ -146,7 +146,7 @@ describe('getSchedulePosts', () => {
       name: 'Test',
       frequency: {
         interval: { every: 1, unit: 'days' },
-        timeOfDay: '08:00',
+        timesOfDay: ['08:00'],
         timeZone: 'UTC',
       },
       isActive: true,
@@ -175,7 +175,7 @@ describe('publishNextPost', () => {
       name: 'Test',
       frequency: {
         interval: { every: 1, unit: 'days' },
-        timeOfDay: '08:00',
+        timesOfDay: ['08:00'],
         timeZone: 'UTC',
       },
       isActive: true,
@@ -205,7 +205,7 @@ describe('publishNextPost', () => {
       name: 'Test',
       frequency: {
         interval: { every: 1, unit: 'days' },
-        timeOfDay: '08:00',
+        timesOfDay: ['08:00'],
         timeZone: 'UTC',
       },
       isActive: true,

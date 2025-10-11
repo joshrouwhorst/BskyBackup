@@ -1,24 +1,24 @@
-import { Schedule, ScheduleFrequency } from "@/types/scheduler";
-import { displayTime } from "@/helpers/utils";
+import { Schedule, ScheduleFrequency } from '@/types/scheduler'
+import { displayTime } from '@/helpers/utils'
 
 const daysOfWeek = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+]
 
 export default function ScheduleListItem({
   schedule,
   onEdit,
   onDelete,
 }: {
-  schedule: Schedule;
-  onEdit: (schedule: Schedule) => void;
-  onDelete: (id: string) => void;
+  schedule: Schedule
+  onEdit: (schedule: Schedule) => void
+  onDelete: (id: string) => void
 }) {
   return (
     <div className="flex justify-between items-start">
@@ -27,7 +27,7 @@ export default function ScheduleListItem({
           {schedule.name}
         </h3>
         <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-          Group: {schedule.group ?? "NONE"}
+          Group: {schedule.group ?? 'NONE'}
         </p>
         <div className="flex items-center mt-2 space-x-4">
           <FrequencyOutput frequency={schedule.frequency} />
@@ -36,61 +36,38 @@ export default function ScheduleListItem({
       <div className="flex items-center space-x-2">
         <span
           className={`w-3 h-3 rounded-full ${
-            schedule.isActive ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"
+            schedule.isActive ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
           }`}
         />
       </div>
     </div>
-  );
+  )
 }
 
 function FrequencyOutput({ frequency }: { frequency: ScheduleFrequency }) {
-  const parts = [];
-  switch (frequency.interval.unit) {
-    case "minutes":
-      parts.push(
-        `Every ${frequency.interval.every} minute${frequency.interval.every > 1 ? "s" : ""}`,
-      );
-      break;
-    case "hours":
-      parts.push(
-        `Every ${frequency.interval.every} hour${frequency.interval.every > 1 ? "s" : ""}`,
-      );
-      break;
-    case "days":
-      parts.push(
-        `Every ${frequency.interval.every} day${frequency.interval.every > 1 ? "s" : ""}`,
-      );
-      break;
-    case "weeks":
-      parts.push(
-        `Every ${frequency.interval.every} week${frequency.interval.every > 1 ? "s" : ""}`,
-      );
-      break;
-    case "months":
-      parts.push(
-        `Every ${frequency.interval.every} month${frequency.interval.every > 1 ? "s" : ""}`,
-      );
-      break;
-    default:
-      parts.push("Unknown interval");
+  const parts = []
+
+  const unitPlural = frequency.interval.unit
+  const unitSingle = unitPlural.replace(/s$/, '')
+  const every = frequency.interval.every
+
+  parts.push(`Every ${every === 1 ? unitSingle : `${every} ${unitPlural}`} `)
+
+  if (frequency.daysOfWeek !== undefined && frequency.daysOfWeek.length > 0) {
+    parts.push(`on ${frequency.daysOfWeek.join(', ')}`)
   }
 
-  if (frequency.dayOfWeek !== undefined) {
-    parts.push(`on ${daysOfWeek[frequency.dayOfWeek]}`);
+  if (frequency.daysOfMonth !== undefined && frequency.daysOfMonth.length > 0) {
+    parts.push(`on day ${frequency.daysOfMonth.join(', ')}`)
   }
 
-  if (frequency.dayOfMonth !== undefined) {
-    parts.push(`on day ${frequency.dayOfMonth}`);
-  }
-
-  if (frequency.timeOfDay) {
-    parts.push(`at ${displayTime(frequency.timeOfDay)}`);
+  if (frequency.timesOfDay !== undefined && frequency.timesOfDay.length > 0) {
+    parts.push(`at ${frequency.timesOfDay.map(displayTime).join(', ')}`)
   }
 
   if (frequency.timeZone) {
-    parts.push(`(${frequency.timeZone})`);
+    parts.push(`(${frequency.timeZone})`)
   }
 
-  return parts.join(" ");
+  return parts.join(' ')
 }

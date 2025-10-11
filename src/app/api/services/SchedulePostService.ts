@@ -48,19 +48,19 @@ function cleanFrequency(frequency: ScheduleFrequency): ScheduleFrequency {
   switch (cleanedFrequency.interval.unit) {
     case 'minutes':
     case 'hours':
-      cleanedFrequency.timeOfDay = undefined
-      cleanedFrequency.dayOfWeek = undefined
-      cleanedFrequency.dayOfMonth = undefined
+      cleanedFrequency.timesOfDay = []
+      cleanedFrequency.daysOfWeek = []
+      cleanedFrequency.daysOfMonth = []
       break
     case 'days':
-      cleanedFrequency.dayOfWeek = undefined
-      cleanedFrequency.dayOfMonth = undefined
+      cleanedFrequency.daysOfWeek = []
+      cleanedFrequency.daysOfMonth = []
       break
     case 'weeks':
-      cleanedFrequency.dayOfMonth = undefined
+      cleanedFrequency.daysOfMonth = []
       break
     case 'months':
-      cleanedFrequency.dayOfWeek = undefined
+      cleanedFrequency.daysOfWeek = []
       break
   }
 
@@ -296,18 +296,18 @@ export function getNextTriggerTime(
   frequency: ScheduleFrequency
 ): Date {
   if (!lastRun) lastRun = new Date()
-  const { interval, timeOfDay, timeZone, dayOfWeek, dayOfMonth } = frequency
+  const { interval, timesOfDay, timeZone, daysOfWeek, daysOfMonth } = frequency
   const { every, unit } = interval
 
   const run = getNextDatetime(
     lastRun,
     every,
     unit,
-    timeOfDay,
+    timesOfDay,
     timeZone,
-    dayOfWeek,
-    dayOfMonth
+    daysOfWeek,
+    daysOfMonth
   )
 
-  return run
+  return run.length > 0 ? run[0] : lastRun
 }

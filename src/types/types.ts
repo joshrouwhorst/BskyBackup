@@ -15,6 +15,7 @@ export interface Settings {
   bskyDisplayName?: string
   backupLocation?: string
   pruneAfterMonths?: number
+  defaultTimezone?: string
   hasOnboarded: boolean
 }
 

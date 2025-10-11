@@ -1,9 +1,9 @@
-"use client";
+'use client'
 
-import React from "react";
-import { Schedule } from "@/types/scheduler";
-import ScheduleListItem from "./ScheduleView";
-import { useScheduleContext } from "@/providers/ScheduleProvider";
+import React from 'react'
+import { Schedule } from '@/types/scheduler'
+import ScheduleListItem from './ScheduleView'
+import { useScheduleContext } from '@/providers/ScheduleProvider'
 
 export default function ScheduleList({
   onEdit,
@@ -12,13 +12,13 @@ export default function ScheduleList({
   selectedSchedule,
   setSelectedSchedule,
 }: {
-  onEdit: (schedule: Schedule) => void;
-  onDelete: (id: string) => void;
-  onCreateNew: () => void;
-  selectedSchedule: Schedule | null;
-  setSelectedSchedule: (schedule: Schedule | null) => void;
+  onEdit: (schedule: Schedule) => void
+  onDelete: (id: string) => void
+  onCreateNew: () => void
+  selectedSchedule: Schedule | null
+  setSelectedSchedule: (schedule: Schedule | null) => void
 }) {
-  const { schedules } = useScheduleContext();
+  const { schedules } = useScheduleContext()
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -27,6 +27,7 @@ export default function ScheduleList({
             All Schedules
           </h2>
           <button
+            type="button"
             onClick={onCreateNew}
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 cursor-pointer"
           >
@@ -36,14 +37,22 @@ export default function ScheduleList({
       </div>
       <div className="divide-y divide-gray-200 dark:divide-gray-700">
         {schedules.map((schedule) => (
-          <div
+          <button
             key={schedule.id}
-            className={`p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
+            type="button"
+            className={`w-full text-left p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
               selectedSchedule?.id === schedule.id
-                ? "bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-500"
-                : ""
+                ? 'bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-500'
+                : ''
             }`}
             onClick={() => setSelectedSchedule(schedule)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                setSelectedSchedule(schedule)
+              }
+            }}
+            aria-pressed={selectedSchedule?.id === schedule.id}
+            tabIndex={0}
           >
             <ScheduleListItem
               key={schedule.id}
@@ -51,9 +60,9 @@ export default function ScheduleList({
               onEdit={onEdit}
               onDelete={onDelete}
             />
-          </div>
+          </button>
         ))}
       </div>
     </div>
-  );
+  )
 }
