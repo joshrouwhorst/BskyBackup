@@ -36,32 +36,34 @@ export default function ScheduleList({
         </div>
       </div>
       <div className="divide-y divide-gray-200 dark:divide-gray-700">
-        {schedules.map((schedule) => (
-          <button
-            key={schedule.id}
-            type="button"
-            className={`w-full text-left p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
-              selectedSchedule?.id === schedule.id
-                ? 'bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-500'
-                : ''
-            }`}
-            onClick={() => setSelectedSchedule(schedule)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                setSelectedSchedule(schedule)
-              }
-            }}
-            aria-pressed={selectedSchedule?.id === schedule.id}
-            tabIndex={0}
-          >
-            <ScheduleListItem
+        {schedules
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((schedule) => (
+            <button
               key={schedule.id}
-              schedule={schedule}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
-          </button>
-        ))}
+              type="button"
+              className={`w-full text-left p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                selectedSchedule?.id === schedule.id
+                  ? 'bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-500'
+                  : ''
+              }`}
+              onClick={() => setSelectedSchedule(schedule)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  setSelectedSchedule(schedule)
+                }
+              }}
+              aria-pressed={selectedSchedule?.id === schedule.id}
+              tabIndex={0}
+            >
+              <ScheduleListItem
+                key={schedule.id}
+                schedule={schedule}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
+            </button>
+          ))}
       </div>
     </div>
   )

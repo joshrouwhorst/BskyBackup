@@ -5,7 +5,7 @@ import { displayTime, formatFullDateTime } from '@/helpers/utils'
 import { useEffect, useState } from 'react'
 import Post from '../Post'
 
-export default function ScheduleDisplay({
+export default function ScheduleDetails({
   schedule,
   onEdit,
   onDelete,
@@ -33,7 +33,7 @@ export default function ScheduleDisplay({
 
   useEffect(() => {
     const fetchScheduleLookups = async () => {
-      const next = await getScheduleLookups(schedule.id!)
+      const next = await getScheduleLookups(schedule.id!, 1)
       if (next) {
         setLookups(next)
       } else {
@@ -165,10 +165,10 @@ export default function ScheduleDisplay({
           )}
         </div>
       </div>
-      {lookups?.nextPostDate ? (
+      {lookups && lookups.nextPostDates.length > 0 ? (
         <div>
           <Label>Next Post Date</Label>
-          <div>{formatFullDateTime(lookups.nextPostDate)}</div>
+          <div>{formatFullDateTime(lookups.nextPostDates[0])}</div>
         </div>
       ) : (
         <div>No next post date available.</div>

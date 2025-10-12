@@ -40,5 +40,5 @@ export interface CreateScheduleRequest {
 
 export interface ScheduleLookups {
   nextPost?: DraftPost | null
-  nextPostDate?: Date | null
+  nextPostDates: Date[]
 }
