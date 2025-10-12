@@ -1,32 +1,34 @@
-"use client";
+'use client'
 
-import React, { createContext, useContext, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode } from 'react'
 import {
   CreateScheduleRequest,
   Schedule,
   ScheduleLookups,
-} from "@/types/scheduler";
-import { useSchedules } from "@/hooks/useSchedules";
-import { DraftPost } from "@/types/drafts";
+} from '@/types/scheduler'
+import { useSchedules } from '@/hooks/useSchedules'
 
 interface SchedulesContextType {
-  schedules: Schedule[];
-  isLoading: boolean;
-  refresh: () => Promise<void>;
-  createSchedule: (input: CreateScheduleRequest) => Promise<Schedule>;
-  updateSchedule: (input: Schedule) => Promise<Schedule>;
-  deleteSchedule: (id: string) => Promise<void>;
-  triggerSchedule: (scheduleId: string) => Promise<void>;
-  getScheduleLookups: (scheduleId: string) => Promise<ScheduleLookups | null>;
+  schedules: Schedule[]
+  isLoading: boolean
+  refresh: () => Promise<void>
+  createSchedule: (input: CreateScheduleRequest) => Promise<Schedule>
+  updateSchedule: (input: Schedule) => Promise<Schedule>
+  deleteSchedule: (id: string) => Promise<void>
+  triggerSchedule: (scheduleId: string) => Promise<void>
+  getScheduleLookups: (
+    scheduleId: string,
+    dateCount: number
+  ) => Promise<ScheduleLookups | null>
 }
 
 // Create the context
 const ScheduleContext = createContext<SchedulesContextType | undefined>(
-  undefined,
-);
+  undefined
+)
 
 interface ScheduleProviderProps {
-  children: ReactNode;
+  children: ReactNode
 }
 
 export default function ScheduleProvider({ children }: ScheduleProviderProps) {
@@ -39,7 +41,7 @@ export default function ScheduleProvider({ children }: ScheduleProviderProps) {
     deleteSchedule,
     triggerSchedule,
     getScheduleLookups,
-  } = useSchedules();
+  } = useSchedules()
 
   const contextValue: SchedulesContextType = {
     schedules,
@@ -50,21 +52,19 @@ export default function ScheduleProvider({ children }: ScheduleProviderProps) {
     deleteSchedule,
     triggerSchedule,
     getScheduleLookups,
-  };
+  }
 
   return (
     <ScheduleContext.Provider value={contextValue}>
       {children}
     </ScheduleContext.Provider>
-  );
+  )
 }
 
 export const useScheduleContext = () => {
-  const context = useContext(ScheduleContext);
+  const context = useContext(ScheduleContext)
   if (context === undefined) {
-    throw new Error(
-      "useScheduleContext must be used within a ScheduleProvider",
-    );
+    throw new Error('useScheduleContext must be used within a ScheduleProvider')
   }
-  return context;
-};
+  return context
+}

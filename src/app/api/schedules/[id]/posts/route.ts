@@ -11,6 +11,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const searchParams = new URL(request.url).searchParams
+    const dateCountParam = searchParams.get('dateCount')
+    const dateCount = dateCountParam ? parseInt(dateCountParam, 10) : 5
+    if (isNaN(dateCount) || dateCount <= 0) {
+      return NextResponse.json(
+        { error: 'dateCount must be a positive integer' },
+        { status: 400 }
+      )
+    }
+
     const { id } = await params
     if (!id) {
       logger.error('Schedule ID is required')
@@ -19,7 +29,8 @@ export async function GET(
         { status: 400 }
       )
     }
-    const lookups = await getScheduleLookups(id)
+
+    const lookups = await getScheduleLookups(id, dateCount)
     if (!lookups) {
       logger.error('No scheduled lookups found')
       return NextResponse.json(

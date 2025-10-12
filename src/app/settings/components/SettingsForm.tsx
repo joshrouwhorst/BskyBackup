@@ -1,46 +1,47 @@
-"use client";
-import React, { useState, useEffect } from "react";
-import { useSettingsContext } from "@/providers/SettingsProvider";
-import { Settings } from "@/types/types";
-import { Button, Input, Checkbox, Label } from "@/components/ui/forms";
-import Toast, { ToastProps } from "@/components/Toast";
+'use client'
+import React, { useState, useEffect } from 'react'
+import { useSettingsContext } from '@/providers/SettingsProvider'
+import { Settings } from '@/types/types'
+import { Button, Input, Checkbox, Label } from '@/components/ui/forms'
+import Toast, { ToastProps } from '@/components/Toast'
+import TimezoneSelect from '@/components/schedules/TimezoneSelect'
 
 export default function SettingsForm() {
-  const { settings, update, isLoading, error, refresh } = useSettingsContext();
-  const [formState, setFormState] = useState<Partial<Settings>>({});
-  const [toastMessage, setToastMessage] = useState<ToastProps | null>(null);
+  const { settings, update, isLoading, error, refresh } = useSettingsContext()
+  const [formState, setFormState] = useState<Partial<Settings>>({})
+  const [toastMessage, setToastMessage] = useState<ToastProps | null>(null)
 
   useEffect(() => {
     if (settings) {
-      setFormState(settings);
+      setFormState(settings)
     }
-  }, [settings]);
+  }, [settings])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type, checked } = e.target
 
     setFormState((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
+      [name]: type === 'checkbox' ? checked : value,
+    }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await update(formState);
+    e.preventDefault()
+    await update(formState)
     setToastMessage({
-      message: "Settings updated successfully",
-      type: "success",
-    });
-    setTimeout(() => setToastMessage(null), 3000);
-  };
+      message: 'Settings updated successfully',
+      type: 'success',
+    })
+    setTimeout(() => setToastMessage(null), 3000)
+  }
 
   if (isLoading && !settings) {
-    return <div>Loading settings...</div>;
+    return <div>Loading settings...</div>
   }
 
   if (error) {
-    return <div>Error loading settings: {error.message}</div>;
+    return <div>Error loading settings: {error.message}</div>
   }
 
   return (
@@ -52,28 +53,28 @@ export default function SettingsForm() {
         <SettingsField
           label="Bluesky Display Name"
           name="bskyDisplayName"
-          value={formState.bskyDisplayName || ""}
+          value={formState.bskyDisplayName || ''}
           type="text"
           onChange={handleChange}
         />
         <SettingsField
           label="Bluesky Identifier"
           name="bskyIdentifier"
-          value={formState.bskyIdentifier || ""}
+          value={formState.bskyIdentifier || ''}
           type="text"
           onChange={handleChange}
         />
         <SettingsField
           label="Bluesky Password"
           name="bskyPassword"
-          value={formState.bskyPassword || ""}
+          value={formState.bskyPassword || ''}
           type="password"
           onChange={handleChange}
         />
         <SettingsField
           label="Backup Location"
           name="backupLocation"
-          value={formState.backupLocation || ""}
+          value={formState.backupLocation || ''}
           type="text"
           onChange={handleChange}
         />
@@ -84,6 +85,15 @@ export default function SettingsForm() {
           type="number"
           onChange={handleChange}
         />
+        <div className="mb-4">
+          <Label>Default Timezone</Label>
+          <TimezoneSelect
+            value={formState.defaultTimezone || ''}
+            onChange={(value) =>
+              setFormState((prev) => ({ ...prev, defaultTimezone: value }))
+            }
+          />
+        </div>
       </div>
 
       {toastMessage && <Toast {...toastMessage} />}
@@ -91,7 +101,7 @@ export default function SettingsForm() {
         Save
       </Button>
     </form>
-  );
+  )
 }
 
 function SettingsField({
@@ -101,16 +111,16 @@ function SettingsField({
   type,
   onChange,
 }: {
-  label: string;
-  name: string;
-  value: string | number | boolean;
-  type: "text" | "number" | "checkbox" | "password";
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  label: string
+  name: string
+  value: string | number | boolean
+  type: 'text' | 'number' | 'checkbox' | 'password'
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
 }) {
   return (
     <div className="mb-4">
       <Label htmlFor={name}>{label}</Label>
-      {type === "checkbox" ? (
+      {type === 'checkbox' ? (
         <Checkbox
           name={name}
           id={name}
@@ -123,11 +133,11 @@ function SettingsField({
           name={name}
           id={name}
           value={
-            typeof value === "boolean" ? (value ? "true" : "false") : value
+            typeof value === 'boolean' ? (value ? 'true' : 'false') : value
           }
           onChange={onChange}
         />
       )}
     </div>
-  );
+  )
 }

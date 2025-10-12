@@ -6,7 +6,8 @@ import { Main } from '@atproto/api/dist/client/types/app/bsky/richtext/facet'
 import { Governor } from './governor'
 import Logger from '../helpers/logger'
 import { getSettings } from '../services/SettingsService'
-import { getPaths } from '@/config/main'
+import { getPaths, PREVENT_POSTING } from '@/config/main'
+import { wait } from '@/helpers/utils'
 
 const logger = new Logger('BlueskySvc')
 
@@ -138,12 +139,18 @@ export async function deletePostsWithUris(postUris: string[]): Promise<void> {
     console.log('Successfully authenticated with Bluesky')
 
     for (const postUri of postUris) {
-      console.log(`Deleting post: ${postUri}`)
+      logger.log(`Deleting post: ${postUri}`)
+      if (PREVENT_POSTING) {
+        logger.log(
+          'PREVENT_POSTING is enabled, skipping actual deletion of post.'
+        )
+        continue
+      }
       await agent.deletePost(postUri)
-      console.log(`Successfully deleted post: ${postUri}`)
+      logger.log(`Successfully deleted post: ${postUri}`)
     }
   } catch (error) {
-    console.error('Error deleting post:', error)
+    logger.error('Error deleting post:', error)
     throw new Error(
       `Failed to delete post: ${
         error instanceof Error ? error.message : 'Unknown error'
@@ -277,12 +284,18 @@ export async function deletePosts(config: PostFilters): Promise<void> {
           `Deleting post ${i + 1}/${postsToDelete.length}: ${postUri}`
         )
         await governor.wait(200)
+        if (PREVENT_POSTING) {
+          logger.log(
+            'PREVENT_POSTING is enabled, skipping actual deletion of post.'
+          )
+          continue
+        }
         await agent.deletePost(postUri)
 
         // Add delay between deletions to avoid rate limiting
-        await new Promise((resolve) => setTimeout(resolve, 200))
+        await wait(500)
       } catch (deleteError) {
-        console.error(`Error deleting post ${postUri}:`, deleteError)
+        logger.error(`Error deleting post ${postUri}:`, deleteError)
 
         // Continue with other posts even if one fails
         if (
@@ -298,7 +311,7 @@ export async function deletePosts(config: PostFilters): Promise<void> {
       }
     }
   } catch (error) {
-    console.error('Error deleting old posts:', error)
+    logger.error('Error deleting old posts:', error)
     throw new Error(
       `Failed to delete posts: ${
         error instanceof Error ? error.message : 'Unknown error'
@@ -347,6 +360,11 @@ export async function addPost(post: DraftPost) {
       identifier: BSKY_IDENTIFIER,
       password: BSKY_PASSWORD,
     })
+
+    if (PREVENT_POSTING) {
+      logger.log('PREVENT_POSTING is enabled, skipping actual posting.')
+      return
+    }
 
     // The correct way to post
     // Upload images first to get BlobRefs
@@ -445,7 +463,7 @@ function utf16RangeToUtf8ByteRange(
 export function getFacetsFromText(text: string): Main[] {
   return text
     .split(/(\s+)/)
-    .map((part, index) => {
+    .map((part) => {
       // Handle URLs
       if (part.match(/^https?:\/\/\S+/)) {
         const { byteStart, byteEnd } = utf16RangeToUtf8ByteRange(

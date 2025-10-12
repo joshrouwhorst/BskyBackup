@@ -20,9 +20,9 @@ export interface ScheduleFrequency {
     every: number
     unit: 'minutes' | 'hours' | 'days' | 'weeks' | 'months' | 'years'
   }
-  timeOfDay?: string // "14:00" for daily or longer intervals
-  dayOfWeek?: number // 0-6 for weekly intervals (0 = Sunday)
-  dayOfMonth?: number // 1-31 for monthly intervals
+  timesOfDay?: string[] // ["14:00"] for daily or longer intervals
+  daysOfWeek?: string[] // ["Monday", "Wednesday"] for weekly intervals
+  daysOfMonth?: number[] // [1, 15] for monthly intervals
   timeZone?: string // "America/New_York", "UTC", etc.
 }
 
@@ -40,5 +40,5 @@ export interface CreateScheduleRequest {
 
 export interface ScheduleLookups {
   nextPost?: DraftPost | null
-  nextPostDate?: Date | null
+  nextPostDates: Date[]
 }

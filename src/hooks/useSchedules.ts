@@ -15,7 +15,10 @@ interface SchedulesHookContext {
   updateSchedule: (input: Schedule) => Promise<Schedule>
   deleteSchedule: (id: string) => Promise<void>
   triggerSchedule: (scheduleId: string) => Promise<void>
-  getScheduleLookups: (scheduleId: string) => Promise<ScheduleLookups | null>
+  getScheduleLookups: (
+    scheduleId: string,
+    dateCount: number
+  ) => Promise<ScheduleLookups | null>
   reorderSchedulePosts: (
     scheduleId: string,
     draftPostIds: string[]
@@ -125,8 +128,13 @@ export function useSchedules(): SchedulesHookContext {
   }, [])
 
   const getScheduleLookups = useCallback(
-    async (scheduleId: string): Promise<ScheduleLookups | null> => {
-      const response = await fetch(`/api/schedules/${scheduleId}/posts`)
+    async (
+      scheduleId: string,
+      dateCount: number = 1
+    ): Promise<ScheduleLookups | null> => {
+      const response = await fetch(
+        `/api/schedules/${scheduleId}/posts?dateCount=${dateCount}`
+      )
       if (!response.ok) {
         throw new Error('Failed to fetch next post for schedule')
       }

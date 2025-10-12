@@ -7,50 +7,136 @@ dayjs.extend(timezone)
 
 type Unit = 'minutes' | 'hours' | 'days' | 'weeks' | 'months' | 'years'
 
+// Day of week mapping - simplified to only support full day names
+const DAY_NAMES_TO_NUMBERS: { [key: string]: number } = {
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+}
+
 /**
- * Returns the next Date after (or equal to) `start` that matches the rule.
+ * Returns the next Date(s) after (or equal to) `start` that matches the rule.
  *
  * @param start - JS Date
  * @param amount - number to add (used as the recurrence step when stepping forward)
  * @param unit - one of 'minutes'|'hours'|'days'|'weeks'|'months'|'years'
- * @param timeOfDay - optional "HH:mm" or "HH:mm:ss" in the target timezone
+ * @param timesOfDay - optional array of "HH:mm" or "HH:mm:ss" strings in the target timezone
  * @param tz - IANA timezone string (e.g., 'UTC' or 'America/New_York')
- * @param dayOfWeek - optional 0-6 (Sunday=0) when unit is 'weeks'
- * @param dayOfMonth - optional 1-31 when unit is 'months'
+ * @param daysOfWeek - optional array of day names ('Monday', 'Tuesday', etc.)
+ * @param daysOfMonth - optional array of 1-31 when unit is 'months'
+ * @param count - number of dates to return (default 1)
  */
 export function getNextDatetime(
   start: Date,
   amount: number,
   unit: Unit,
-  timeOfDay?: string | null,
+  timesOfDay?: string[] | string | null,
   tz: string = 'UTC',
-  dayOfWeek?: number | null,
-  dayOfMonth?: number | null
-): Date {
-  switch (unit) {
-    case 'minutes':
-    case 'hours':
-      timeOfDay = undefined
-      dayOfMonth = undefined
-      dayOfWeek = undefined
-      break
-    case 'days':
-      dayOfMonth = undefined
-      dayOfWeek = undefined
-      break
-    case 'weeks':
-      dayOfMonth = undefined
-      break
-    case 'months':
-      dayOfWeek = undefined
-      break
-    default:
-      throw new Error(`Unsupported frequency unit: ${unit}`)
-  }
-
+  daysOfWeek?: string[] | string | null,
+  daysOfMonth?: number[] | number | null,
+  count: number = 1
+): Date[] {
   if (amount <= 0) throw new Error('amount must be > 0')
+  if (count <= 0) throw new Error('count must be > 0')
+
   const startDt = dayjs(start).tz(tz)
   if (!startDt.isValid()) throw new Error('invalid start date')
+
+  // Normalize inputs to arrays
+  const timesArray = normalizeToArray(timesOfDay)
+  const daysOfWeekArray = normalizeDaysOfWeek(daysOfWeek)
+  const daysOfMonthArray = normalizeToArray(daysOfMonth)
+
+  // Helper functions
+  const toDate = (d: dayjs.Dayjs) => d.utc().toDate()
+
+  // Generate candidates based on unit and constraints
+  const results: Date[] = []
+  let currentStart = startDt
+  let iterations = 0
+  const maxIterations = 10000
+
+  while (results.length < count && iterations < maxIterations) {
+    iterations++
+
+    const candidates = generateCandidates(
+      currentStart,
+      amount,
+      unit,
+      timesArray,
+      daysOfWeekArray,
+      daysOfMonthArray
+    )
+
+    // Find the next valid candidate after currentStart
+    const validCandidates = candidates
+      .filter(
+        (candidate) =>
+          candidate.isAfter(currentStart) || candidate.isSame(currentStart)
+      )
+      .sort((a, b) => a.valueOf() - b.valueOf())
+
+    if (validCandidates.length > 0) {
+      const nextCandidate = validCandidates[0]
+      results.push(toDate(nextCandidate))
+      currentStart = nextCandidate.add(1, 'minute') // Move past this candidate for next iteration
+    } else {
+      // No candidates found, advance by the unit amount
+      currentStart = currentStart.add(amount, unit)
+    }
+  }
+
+  if (results.length === 0) {
+    throw new Error('no occurrence found')
+  }
+
+  return results.slice(0, count)
+}
+
+// Helper function to normalize inputs to arrays
+function normalizeToArray<T>(input: T | T[] | null | undefined): T[] {
+  if (input === null || input === undefined) return []
+  if (Array.isArray(input)) return input
+  return [input]
+}
+
+// Helper function to normalize day names to numbers
+function normalizeDaysOfWeek(
+  input: string[] | string | null | undefined
+): number[] {
+  if (input === null || input === undefined) return []
+
+  const inputArray = Array.isArray(input) ? input : [input]
+
+  return inputArray.map((day) => {
+    if (typeof day === 'string') {
+      const dayNum = DAY_NAMES_TO_NUMBERS[day.trim()]
+      if (dayNum !== undefined) {
+        return dayNum
+      }
+      throw new Error(
+        `Invalid day name: ${day}. Expected: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday`
+      )
+    }
+
+    throw new Error(`Invalid day type: ${typeof day}. Expected string.`)
+  })
+}
+
+// Generate all possible candidates for the current period
+function generateCandidates(
+  startDt: dayjs.Dayjs,
+  amount: number,
+  unit: Unit,
+  timesArray: string[],
+  daysOfWeekArray: number[],
+  daysOfMonthArray: number[]
+): dayjs.Dayjs[] {
+  const candidates: dayjs.Dayjs[] = []
 
   const parseTime = (d: dayjs.Dayjs, t?: string | null) => {
     if (!t) return d
@@ -61,120 +147,98 @@ export function getNextDatetime(
     return d.hour(hh).minute(mm).second(ss).millisecond(0)
   }
 
-  // Helper to return JS Date in UTC (ISO-compatible) corresponding to tz-aware dayjs
-  const toDate = (d: dayjs.Dayjs) => d.utc().toDate()
-
-  // If unit is a simple offset (minutes/hours/days/weeks/months/years) without day constraints,
-  // we use the rule: if timeOfDay is provided, we prefer same period if it hasn't passed; otherwise add amount.
-  if (
-    !dayOfWeek &&
-    !dayOfMonth &&
-    ['minutes', 'hours', 'days', 'weeks', 'months', 'years'].includes(unit)
-  ) {
-    // If unit is 'days' and timeOfDay provided, consider same day if time not passed
-    if (unit === 'days' && timeOfDay) {
-      const candidateSameDay = parseTime(startDt, timeOfDay)
-      if (
-        candidateSameDay.isSame(startDt) ||
-        candidateSameDay.isAfter(startDt)
-      ) {
-        return toDate(candidateSameDay)
-      }
-      // else fall through to add 1 * amount days and set time
-      const next = parseTime(startDt.add(amount, 'day'), timeOfDay)
-      return toDate(next)
+  switch (unit) {
+    case 'minutes':
+    case 'hours': {
+      // Simple time-based recurrence
+      const times = timesArray.length > 0 ? timesArray : [null]
+      times.forEach((time) => {
+        let candidate = startDt.add(amount, unit)
+        candidate = parseTime(candidate, time)
+        candidates.push(candidate)
+      })
+      break
     }
 
-    // For other units where timeOfDay provided, apply time after adding the amount unless same-period rule needed.
-    const next = startDt.add(amount, unit)
-    const withTime = parseTime(next, timeOfDay)
-    return toDate(withTime)
-  }
-
-  // When dayOfWeek is provided (weekly recurrence)
-  if (unit === 'weeks' && dayOfWeek !== undefined && dayOfWeek !== null) {
-    // Normalize dayOfWeek 0-6
-    const targetDow = ((dayOfWeek % 7) + 7) % 7
-    // Start candidate: same day with timeOfDay applied
-    let candidate = parseTime(startDt, timeOfDay)
-    // If candidate is before start, advance to next day; if it's the same day but wrong weekday, we still search forward
-    // Find the next weekday >= candidate (including same day if >= start)
-    const startSearch = candidate
-    for (let i = 0; i < 7 * 1000; i++) {
-      const check = startSearch.add(i, 'day')
-      if (check.day() === targetDow) {
-        const checkWithTime = parseTime(check, timeOfDay)
-        if (checkWithTime.isAfter(startDt) || checkWithTime.isSame(startDt)) {
-          return toDate(checkWithTime)
+    case 'days': {
+      // Daily recurrence with optional specific times
+      const times = timesArray.length > 0 ? timesArray : [null]
+      times.forEach((time) => {
+        // Try same day first
+        let candidate = parseTime(startDt, time)
+        if (candidate.isAfter(startDt) || candidate.isSame(startDt)) {
+          candidates.push(candidate)
         }
-        break
-      }
+        // Then try next day
+        candidate = parseTime(startDt.add(amount, 'day'), time)
+        candidates.push(candidate)
+      })
+      break
     }
-    // If not found in remaining days of this week, add `amount` weeks and search that week
-    let weeksAdded = 0
-    while (weeksAdded < 1000) {
-      weeksAdded += amount
-      const baseWeek = startDt.add(weeksAdded, 'week')
-      // find the dayOfWeek within that week
-      const baseStartOfWeek = baseWeek.startOf('week') // dayjs week start depends on locale; using Sunday start
-      for (let d = 0; d < 7; d++) {
-        const cand = parseTime(baseStartOfWeek.add(d, 'day'), timeOfDay)
-        if (cand.day() === targetDow) return toDate(cand)
-      }
+
+    case 'weeks': {
+      // Weekly recurrence with specific days and times
+      const days =
+        daysOfWeekArray.length > 0 ? daysOfWeekArray : [startDt.day()]
+      const times = timesArray.length > 0 ? timesArray : [null]
+
+      days.forEach((targetDay) => {
+        times.forEach((time) => {
+          // Find next occurrence of this day
+          let daysToAdd = (targetDay - startDt.day() + 7) % 7
+
+          if (daysToAdd === 0) {
+            // Same day - for weekly recurrence, we want next week
+            daysToAdd = 7
+          }
+
+          const nextOccurrence = parseTime(startDt.add(daysToAdd, 'day'), time)
+          candidates.push(nextOccurrence)
+        })
+      })
+      break
     }
-    throw new Error('unable to compute next weekly occurrence')
+
+    case 'months': {
+      // Monthly recurrence with specific days and times
+      const days =
+        daysOfMonthArray.length > 0 ? daysOfMonthArray : [startDt.date()]
+      const times = timesArray.length > 0 ? timesArray : [null]
+
+      days.forEach((targetDay) => {
+        times.forEach((time) => {
+          // Try current month
+          if (targetDay <= startDt.daysInMonth()) {
+            const candidate = parseTime(startDt.date(targetDay), time)
+            if (candidate.isAfter(startDt) || candidate.isSame(startDt)) {
+              candidates.push(candidate)
+            }
+          }
+
+          // Try next month
+          const nextMonth = startDt.add(amount, 'month')
+          if (targetDay <= nextMonth.daysInMonth()) {
+            const candidate = parseTime(nextMonth.date(targetDay), time)
+            candidates.push(candidate)
+          }
+        })
+      })
+      break
+    }
+
+    case 'years': {
+      // Yearly recurrence
+      const times = timesArray.length > 0 ? timesArray : [null]
+      times.forEach((time) => {
+        const candidate = parseTime(startDt.add(amount, 'year'), time)
+        candidates.push(candidate)
+      })
+      break
+    }
+
+    default:
+      throw new Error(`Unsupported frequency unit: ${unit}`)
   }
 
-  // When dayOfMonth is provided (monthly recurrence)
-  if (unit === 'months' && dayOfMonth !== undefined && dayOfMonth !== null) {
-    const targetDom = dayOfMonth
-    // Try same month first
-    const sameMonth = parseTime(startDt, timeOfDay).date(targetDom)
-    // If targetDom doesn't exist in this month, dayjs will roll into next month; guard by checking daysInMonth
-    const dimSame = startDt.daysInMonth()
-    if (targetDom <= dimSame) {
-      const candidate = parseTime(startDt.date(targetDom), timeOfDay)
-      if (candidate.isAfter(startDt) || candidate.isSame(startDt)) {
-        return toDate(candidate)
-      }
-    }
-    // Otherwise advance by amount months until a valid date found
-    for (let i = amount; i < 1000 * amount; i += amount) {
-      const m = startDt.add(i, 'month')
-      const dim = m.daysInMonth()
-      if (targetDom > dim) continue
-      const candidate = parseTime(m.date(targetDom), timeOfDay)
-      if (candidate.isAfter(startDt) || candidate.isSame(startDt)) {
-        return toDate(candidate)
-      }
-    }
-    throw new Error('unable to compute next monthly occurrence')
-  }
-
-  // Fallback: step forward in unit-sized increments until we find a datetime after start that fits constraints
-  let iter = 0
-  let cur = startDt
-  while (iter++ < 10000) {
-    cur = cur.add(amount, unit)
-    let candidate = parseTime(cur, timeOfDay)
-    if (
-      dayOfWeek !== undefined &&
-      dayOfWeek !== null &&
-      candidate.day() !== dayOfWeek
-    ) {
-      continue
-    }
-    if (
-      dayOfMonth !== undefined &&
-      dayOfMonth !== null &&
-      candidate.date() !== dayOfMonth
-    ) {
-      continue
-    }
-    if (candidate.isAfter(startDt) || candidate.isSame(startDt)) {
-      return toDate(candidate)
-    }
-  }
-
-  throw new Error('no occurrence found')
+  return candidates
 }

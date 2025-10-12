@@ -1,42 +1,42 @@
-"use client";
-import { useState } from "react";
-import { Schedule } from "@/types/scheduler";
-import AppDataProvider from "@/providers/AppDataProvider";
-import ScheduleList from "@/components/schedules/ScheduleList";
-import ScheduleDisplay from "@/components/schedules/ScheduleDisplay";
-import ScheduleEditForm from "@/components/schedules/ScheduleEditForm";
-import ScheduleProvider from "@/providers/ScheduleProvider";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import DraftProvider from "@/providers/DraftsProvider";
+'use client'
+import { useState } from 'react'
+import { Schedule } from '@/types/scheduler'
+import AppDataProvider from '@/providers/AppDataProvider'
+import ScheduleList from '@/components/schedules/ScheduleList'
+import ScheduleDetails from '@/components/schedules/ScheduleDetails'
+import ScheduleEditForm from '@/components/schedules/ScheduleEditForm'
+import ScheduleProvider from '@/providers/ScheduleProvider'
+import ErrorBoundary from '@/components/ErrorBoundary'
+import DraftProvider from '@/providers/DraftsProvider'
 
 export default function SchedulesPage() {
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(
-    null,
-  );
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<Partial<Schedule>>({});
+    null
+  )
+  const [isEditing, setIsEditing] = useState(false)
+  const [editForm, setEditForm] = useState<Partial<Schedule>>({})
 
   const handleEdit = (schedule: Schedule) => {
-    setSelectedSchedule(schedule);
-    setEditForm(schedule);
-    setIsEditing(true);
-  };
+    setSelectedSchedule(schedule)
+    setEditForm(schedule)
+    setIsEditing(true)
+  }
 
   const handleSave = async () => {
-    setIsEditing(false);
-    setSelectedSchedule(null);
-    setEditForm({});
-  };
+    setIsEditing(false)
+    setSelectedSchedule(null)
+    setEditForm({})
+  }
 
   const handleDelete = async (id: string) => {
-    setSelectedSchedule(null);
-  };
+    setSelectedSchedule(null)
+  }
 
   const handleCreateNew = () => {
-    setSelectedSchedule(null);
-    setEditForm({});
-    setIsEditing(true);
-  };
+    setSelectedSchedule(null)
+    setEditForm({})
+    setIsEditing(true)
+  }
 
   return (
     <AppDataProvider>
@@ -70,9 +70,9 @@ export default function SchedulesPage() {
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     {isEditing
                       ? selectedSchedule
-                        ? "Edit Schedule"
-                        : "Create Schedule"
-                      : "Schedule Details"}
+                        ? 'Edit Schedule'
+                        : 'Create Schedule'
+                      : 'Schedule Details'}
                   </h2>
                 </div>
                 <div className="p-6">
@@ -90,7 +90,7 @@ export default function SchedulesPage() {
                         </ErrorBoundary>
                       ) : (
                         <ErrorBoundary>
-                          <ScheduleDisplay
+                          <ScheduleDetails
                             schedule={selectedSchedule!}
                             onEdit={handleEdit}
                             onDelete={handleDelete}
@@ -110,5 +110,5 @@ export default function SchedulesPage() {
         </ScheduleProvider>
       </DraftProvider>
     </AppDataProvider>
-  );
+  )
 }

@@ -9,6 +9,9 @@ export const DATA_LOCATION =
 export const APP_DATA_FILE = `${DATA_LOCATION}/app-data/app-data`
 export const LOGS_PATH = `${DATA_LOCATION}/logs`
 
+// If true, prevents posting to Bluesky (for testing purposes)
+export const PREVENT_POSTING = process.env.PREVENT_POSTING === 'true' || false
+
 export const getPaths = () => {
   return {
     mainDataLocation: DATA_LOCATION,
