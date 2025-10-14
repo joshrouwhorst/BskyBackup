@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 import { EventEmitter } from 'events'
-import Logger from '../helpers/logger'
+import Logger from '../../api-helpers/logger'
 import { DATA_LOCATION } from '@/config/main'
 
 const logger = new Logger('FileService')

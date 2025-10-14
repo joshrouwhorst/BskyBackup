@@ -107,7 +107,7 @@ function transformPostView(post: FeedViewPost['post']): PostView {
               (post.embed as EmbedView).images?.map((image, index) => ({
                 fullsize: image.fullsize,
                 local: getMediaPath(
-                  getMediaName(post, image.fullsize, index),
+                  getMediaName(post, getMediaType(image.fullsize), index),
                   post.indexedAt.split('T')[0].split('-')[0],
                   getMediaType(image.fullsize)
                 ),
@@ -128,7 +128,7 @@ function transformPostView(post: FeedViewPost['post']): PostView {
               (post.embed as EmbedView).images?.map((image, index) => ({
                 fullsize: image.fullsize,
                 local: getMediaPath(
-                  getMediaName(post, image.fullsize, index),
+                  getMediaName(post, getMediaType(image.fullsize), index),
                   post.indexedAt.split('T')[0].split('-')[0],
                   getMediaType(image.fullsize)
                 ),

@@ -6,11 +6,12 @@ import {
 } from '../services/SchedulePostService'
 import { ensureCronIsRunning } from '../services/CronService'
 import { NextRequest, NextResponse } from 'next/server'
-import Logger from '@/app/api/helpers/logger'
+import Logger from '@/app/api-helpers/logger'
+import { withBskyLogoutAndErrorHandlingForRequest } from '../../api-helpers/apiWrapper'
 
 const logger = new Logger('ScheduleRoute')
 
-export async function GET(request: NextRequest) {
+export const GET = withBskyLogoutAndErrorHandlingForRequest(async (request) => {
   try {
     await ensureCronIsRunning() // Ensure cron job is running to handle schedules
     const { searchParams } = new URL(request.url)
@@ -37,23 +38,25 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const schedule = await createSchedule(body)
-    return NextResponse.json(schedule, { status: 201 })
-  } catch (error) {
-    logger.error('Failed to create schedule', error)
-    return NextResponse.json(
-      { error: 'Failed to create schedule' },
-      { status: 500 }
-    )
+export const POST = withBskyLogoutAndErrorHandlingForRequest(
+  async (request) => {
+    try {
+      const body = await request.json()
+      const schedule = await createSchedule(body)
+      return NextResponse.json(schedule, { status: 201 })
+    } catch (error) {
+      logger.error('Failed to create schedule', error)
+      return NextResponse.json(
+        { error: 'Failed to create schedule' },
+        { status: 500 }
+      )
+    }
   }
-}
+)
 
-export async function PUT(request: NextRequest) {
+export const PUT = withBskyLogoutAndErrorHandlingForRequest(async (request) => {
   try {
     const body = await request.json()
     const { id, ...updateData } = body
@@ -66,28 +69,30 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})
 
-export async function DELETE(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const scheduleId = searchParams.get('id')
+export const DELETE = withBskyLogoutAndErrorHandlingForRequest(
+  async (request) => {
+    try {
+      const { searchParams } = new URL(request.url)
+      const scheduleId = searchParams.get('id')
 
-    if (!scheduleId) {
-      logger.error('Schedule ID is required')
+      if (!scheduleId) {
+        logger.error('Schedule ID is required')
+        return NextResponse.json(
+          { error: 'Schedule ID is required' },
+          { status: 400 }
+        )
+      }
+
+      await deleteSchedule(scheduleId)
+      return NextResponse.json({ message: 'Schedule deleted successfully' })
+    } catch (error) {
+      logger.error('Failed to delete schedule', error)
       return NextResponse.json(
-        { error: 'Schedule ID is required' },
-        { status: 400 }
+        { error: 'Failed to delete schedule' },
+        { status: 500 }
       )
     }
-
-    await deleteSchedule(scheduleId)
-    return NextResponse.json({ message: 'Schedule deleted successfully' })
-  } catch (error) {
-    logger.error('Failed to delete schedule', error)
-    return NextResponse.json(
-      { error: 'Failed to delete schedule' },
-      { status: 500 }
-    )
   }
-}
+)

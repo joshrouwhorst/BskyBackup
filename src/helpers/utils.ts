@@ -1,3 +1,5 @@
+import { BACKUP_MEDIA_ENDPOINT } from '@/config/frontend'
+
 export function formatDate(date: Date | string): string {
   if (typeof date === 'string') {
     date = new Date(date)
@@ -50,4 +52,8 @@ export function displayTime(date: Date | string): string {
 
 export async function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+export function getVideoFilePath(postId: string, year: string) {
+  return `${BACKUP_MEDIA_ENDPOINT}/${year}/mp4/video-${postId}.mp4`
 }

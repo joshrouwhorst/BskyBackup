@@ -1,5 +1,5 @@
-import { getAppData, saveAppData } from '../helpers/appData'
-import Logger from '../helpers/logger'
+import { getAppData, saveAppData } from '../../api-helpers/appData'
+import Logger from '../../api-helpers/logger'
 import { Settings } from '@/types/types'
 import {
   BSKY_IDENTIFIER,

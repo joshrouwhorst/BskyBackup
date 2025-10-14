@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { ensureCronIsRunning } from '../services/CronService'
-import Logger from '../helpers/logger'
+import Logger from '../../api-helpers/logger'
 
 const logger = new Logger('UtilRoute')
 

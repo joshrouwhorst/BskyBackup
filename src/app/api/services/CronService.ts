@@ -1,11 +1,11 @@
-import Logger from '@/app/api/helpers/logger'
+import Logger from '@/app/api-helpers/logger'
 import {
   getSchedules,
   updateSchedule,
   getNextTriggerTime,
   publishNextPost,
 } from '../services/SchedulePostService'
-import { cron } from '@/app/api/helpers/cron'
+import { cron } from '@/app/api-helpers/cron'
 
 const CRON_MINUTES = 5
 const TASK_ID = `task-cron`

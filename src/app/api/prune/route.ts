@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prunePosts } from '../services/BackupService'
-import Logger from '@/app/api/helpers/logger'
+import Logger from '@/app/api-helpers/logger'
+import { withBskyLogoutAndErrorHandling } from '../../api-helpers/apiWrapper'
 
 const logger = new Logger('PruneRoute')
 
-export async function POST(request: NextRequest) {
+export const POST = withBskyLogoutAndErrorHandling(async () => {
   try {
     await prunePosts()
 
@@ -16,4 +17,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

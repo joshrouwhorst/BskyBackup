@@ -1,6 +1,6 @@
 import { getSettings, updateSettings } from '../services/SettingsService'
 import { NextResponse } from 'next/server'
-import Logger from '@/app/api/helpers/logger'
+import Logger from '@/app/api-helpers/logger'
 
 const logger = new Logger('SettingsRoute')
 

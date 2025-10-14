@@ -2,14 +2,14 @@ import {
   backupMediaFiles,
   openBackup,
   saveBackup,
-} from '@/app/api/helpers/backupFiles'
-import { getPosts, deletePosts } from '@/app/api/helpers/bluesky'
+} from '@/app/api-helpers/backupFiles'
+import { getPosts, deletePosts, logout } from '@/app/api-helpers/bluesky'
 import { FeedViewPost, PostData } from '@/types/bsky'
-import { transformFeedViewPostToPostData } from '@/app/api/helpers/transformFeedViewPostToPostData'
+import { transformFeedViewPostToPostData } from '@/app/api-helpers/transformFeedViewPostToPostData'
 import { MINIMUM_MINUTES_BETWEEN_BACKUPS } from '@/config/main'
-import Logger from '@/app/api/helpers/logger'
+import Logger from '@/app/api-helpers/logger'
 import { formatDate } from '@/helpers/utils'
-import { getAppData, saveAppData } from '../helpers/appData'
+import { getAppData, saveAppData } from '../../api-helpers/appData'
 import { getSettings } from './SettingsService'
 import { getCache, setCache } from './CacheService'
 

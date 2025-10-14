@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { publishDraftPost } from '../../services/DraftPostService'
-import Logger from '@/app/api/helpers/logger'
+import { withBskyLogoutAndErrorHandlingForRequest } from '../../../api-helpers/apiWrapper'
+import Logger from '@/app/api-helpers/logger'
 
 const logger = new Logger('SchPostRoute')
 
-export async function POST(request: NextRequest) {
-  try {
+// POST handler - wrapped with automatic Bluesky logout
+export const POST = withBskyLogoutAndErrorHandlingForRequest(
+  async (request: NextRequest) => {
     const { id } = await request.json()
     if (!id) {
       logger.error('Post ID is required')
@@ -15,16 +17,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    logger.log(`Publishing draft post: ${id}`)
     await publishDraftPost(id)
+
     return NextResponse.json(
       { message: 'Post sent to all supported platforms' },
       { status: 200 }
     )
-  } catch (error) {
-    logger.error('Failed to send post to social platform', error)
-    return NextResponse.json(
-      { error: 'Failed to send post to social platform' },
-      { status: 500 }
-    )
   }
-}
+)

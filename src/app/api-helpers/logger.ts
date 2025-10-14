@@ -114,14 +114,16 @@ export default class Logger {
 }
 
 function getCircularReplacer() {
-  const seen = new WeakSet()
-  return (key: string, value: any) => {
+  const seen = new WeakSet<object>()
+  return (_: unknown, value: unknown) => {
     if (typeof value === 'object' && value !== null) {
       if (seen.has(value)) {
         return '[Circular]'
       }
       seen.add(value)
+      return value
     }
+    // For primitives, just return the value
     return value
   }
 }

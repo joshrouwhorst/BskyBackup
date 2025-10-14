@@ -6,24 +6,14 @@ import {
   updateDraftPost,
   duplicateDraftPost,
   publishDraftPost,
-} from '../../services/DraftPostService'
-import Logger from '../../helpers/logger'
+} from '@/app/api/services/DraftPostService'
+import Logger from '@/app/api-helpers/logger'
+import { withBskyLogoutWithId } from '@/app/api-helpers/apiWrapper'
 
 const logger = new Logger('DraftRoute')
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id?: string }> }
-) {
-  const { id } = await params
+export const GET = withBskyLogoutWithId(async (id) => {
   try {
-    if (!id) {
-      logger.error('Post ID not provided for GET request')
-      return NextResponse.json(
-        { error: 'Post ID is required' },
-        { status: 400 }
-      )
-    }
     const post = await getDraftPost(id)
     if (!post) {
       logger.error('Post not found for ID:', id)
@@ -39,13 +29,9 @@ export async function GET(
       { status: 500 }
     )
   }
-}
+})
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id?: string }> }
-) {
-  const { id } = await params
+export const POST = withBskyLogoutWithId(async (id, request) => {
   try {
     const url = new URL(request.url)
     const duplicate = url.searchParams.get('duplicate')
@@ -78,13 +64,9 @@ export async function POST(
       { status: 500 }
     )
   }
-}
+})
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id?: string }> }
-) {
-  const { id } = await params
+export const PUT = withBskyLogoutWithId(async (id, request) => {
   try {
     if (!id) {
       logger.error('Post ID is required for PUT request')
@@ -103,13 +85,9 @@ export async function PUT(
       { status: 500 }
     )
   }
-}
+})
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id?: string }> }
-) {
-  const { id } = await params
+export const DELETE = withBskyLogoutWithId(async (id) => {
   try {
     if (!id) {
       logger.error('Post ID is required for DELETE request')
@@ -127,4 +105,4 @@ export async function DELETE(
       { status: 500 }
     )
   }
-}
+})

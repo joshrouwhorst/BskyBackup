@@ -1,4 +1,4 @@
-import { getNextDatetime } from '@/app/api/helpers/getNextDatetime'
+import { getNextDatetime } from '@/app/api-helpers/getNextDatetime'
 
 describe('getNextDatetime', () => {
   it('should add minutes correctly', () => {

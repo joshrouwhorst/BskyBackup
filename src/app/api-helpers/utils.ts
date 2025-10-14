@@ -69,3 +69,9 @@ export function safeName(name: string) {
 export async function ensureDir(dirPath: string) {
   await fs.promises.mkdir(dirPath, { recursive: true })
 }
+
+export async function removeDir(dirPath: string) {
+  if (fs.existsSync(dirPath)) {
+    await fs.promises.rm(dirPath, { recursive: true, force: true })
+  }
+}

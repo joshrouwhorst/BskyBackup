@@ -27,6 +27,7 @@ export interface PostMedia {
 }
 
 export interface PostDisplayData {
+  video: any
   text: string
   author?: {
     displayName?: string

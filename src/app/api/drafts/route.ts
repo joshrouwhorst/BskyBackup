@@ -8,7 +8,7 @@ import {
   getDraftPostsInGroup,
 } from '@/app/api/services/DraftPostService'
 import type { CreateDraftInput, DraftPost } from '@/types/drafts'
-import Logger from '@/app/api/helpers/logger'
+import Logger from '@/app/api-helpers/logger'
 
 const logger = new Logger('DraftsRoute')
 

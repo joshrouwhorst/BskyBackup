@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
-import { getAppData } from '../helpers/appData'
-import Logger from '../helpers/logger'
+import { getAppData } from '../../api-helpers/appData'
+import Logger from '../../api-helpers/logger'
 
 const logger = new Logger('AppDataRoute')
 
 export async function GET() {
   try {
     const appData = await getAppData()
-    // TODO: Setup stat's own endpoint and get rid of appData exposure
+    // TODO: Move this to a bluesky or backup endpoint
     const { lastBackup, postsOnBsky, totalPostsBackedUp, oldestBskyPostDate } =
       appData // Making sure only to expose these fields
     return NextResponse.json({

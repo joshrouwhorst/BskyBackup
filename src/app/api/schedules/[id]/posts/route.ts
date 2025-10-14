@@ -3,13 +3,11 @@ import {
   publishNextPost,
 } from '../../../services/SchedulePostService'
 import { NextRequest, NextResponse } from 'next/server'
-import Logger from '@/app/api/helpers/logger'
+import Logger from '@/app/api-helpers/logger'
 const logger = new Logger('SchPostRoute')
+import { withBskyLogoutWithId } from '@/app/api-helpers/apiWrapper'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const GET = withBskyLogoutWithId(async (id, request) => {
   try {
     const searchParams = new URL(request.url).searchParams
     const dateCountParam = searchParams.get('dateCount')
@@ -21,7 +19,6 @@ export async function GET(
       )
     }
 
-    const { id } = await params
     if (!id) {
       logger.error('Schedule ID is required')
       return NextResponse.json(
@@ -46,15 +43,10 @@ export async function GET(
       { status: 500 }
     )
   }
-}
+})
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const POST = withBskyLogoutWithId(async (id) => {
   try {
-    const { id } = await params
-
     if (!id) {
       logger.error('Schedule ID is required')
       return NextResponse.json(
@@ -75,4 +67,4 @@ export async function POST(
       { status: 500 }
     )
   }
-}
+})

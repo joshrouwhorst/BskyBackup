@@ -4,15 +4,15 @@ import type {
   CreateScheduleRequest,
   ScheduleLookups,
 } from '@/types/scheduler'
-import { getAppData, saveAppData } from '@/app/api/helpers/appData'
+import { getAppData, saveAppData } from '@/app/api-helpers/appData'
 import {
   getDraftPosts,
   getDraftPostsInGroup,
   publishDraftPost,
 } from './DraftPostService'
 import type { DraftPost } from '@/types/drafts'
-import Logger from '../helpers/logger'
-import { getNextDatetime } from '../helpers/getNextDatetime'
+import Logger from '../../api-helpers/logger'
+import { getNextDatetime } from '../../api-helpers/getNextDatetime'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'

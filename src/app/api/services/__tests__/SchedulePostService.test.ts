@@ -3,7 +3,7 @@ import {
   Schedule,
   CreateScheduleRequest,
 } from '@/types/scheduler'
-import * as appDataHelpers from '@/app/api/helpers/appData'
+import * as appDataHelpers from '@/app/api-helpers/appData'
 import * as draftPostService from '../DraftPostService'
 
 import {

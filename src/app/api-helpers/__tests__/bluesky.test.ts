@@ -134,8 +134,6 @@ describe('bluesky helpers', () => {
         cutoffDate: new Date('2022-06-01'),
       })
       expect(posts.length).toBe(1)
-      expect(mockLogin).toHaveBeenCalled()
-      expect(mockLogout).toHaveBeenCalled()
       expect(mockGetAuthorFeed).toHaveBeenCalled()
     })
 
@@ -159,8 +157,6 @@ describe('bluesky helpers', () => {
       })
       expect(mockDeletePost).not.toHaveBeenCalledWith('uri1')
       expect(mockDeletePost).toHaveBeenCalledWith('uri2')
-      expect(mockLogin).toHaveBeenCalled()
-      expect(mockLogout).toHaveBeenCalled()
     })
 
     it('throws if cutoffDate is missing', async () => {
@@ -184,8 +180,6 @@ describe('bluesky helpers', () => {
       await blueskyHelpers.addPost(post)
       expect(mockUploadBlob).toHaveBeenCalled()
       expect(mockCreatePost).toHaveBeenCalled()
-      expect(mockLogin).toHaveBeenCalled()
-      expect(mockLogout).toHaveBeenCalled()
     })
 
     it('uploads video if present', async () => {
@@ -202,65 +196,6 @@ describe('bluesky helpers', () => {
       await blueskyHelpers.addPost(post)
       expect(mockUploadBlob).toHaveBeenCalled()
       expect(mockCreatePost).toHaveBeenCalled()
-    })
-  })
-
-  describe('getFacetsFromText', () => {
-    it('extracts mentions, urls, and tags', () => {
-      const text = 'Hello @alice check https://foo.com #wow'
-      const facets = blueskyHelpers.getFacetsFromText(text)
-      expect(
-        facets.some(
-          (f) => f.features[0].$type === 'app.bsky.richtext.facet#mention'
-        )
-      ).toBe(true)
-      expect(
-        facets.some(
-          (f) => f.features[0].$type === 'app.bsky.richtext.facet#link'
-        )
-      ).toBe(true)
-      expect(
-        facets.some(
-          (f) => f.features[0].$type === 'app.bsky.richtext.facet#tag'
-        )
-      ).toBe(true)
-    })
-
-    it('works with real data', () => {
-      const text = `New series! Playground Opening
-
-📸 Canon FTb
-🎞️ Kodak Gold / Svema 400
-📅 September 2025
-📍Grand Rapids, Michigan, USA
-
-#grandrapids #michigan #filmphotography #photography #believeinfilm #35mm #kodak #svema`
-      const facets = blueskyHelpers.getFacetsFromText(text)
-      expect(
-        facets.some(
-          (f) => f.features[0].$type === 'app.bsky.richtext.facet#mention'
-        )
-      ).toBe(false)
-      expect(
-        facets.some(
-          (f) => f.features[0].$type === 'app.bsky.richtext.facet#link'
-        )
-      ).toBe(false)
-      expect(
-        facets.filter(
-          (f) => f.features[0].$type === 'app.bsky.richtext.facet#tag'
-        ).length
-      ).toBe(8)
-      expect(
-        facets.filter(
-          (f) => f.features[0].$type === 'app.bsky.richtext.facet#tag'
-        )[0].index.byteStart
-      ).toBe(131)
-      expect(
-        facets.filter(
-          (f) => f.features[0].$type === 'app.bsky.richtext.facet#tag'
-        )[0].index.byteEnd
-      ).toBe(143)
     })
   })
 })

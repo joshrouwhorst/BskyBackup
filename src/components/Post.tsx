@@ -2,7 +2,7 @@
 'use client'
 
 import React from 'react'
-import { PostData, ReplyData } from '@/types/bsky'
+import { PostData, PostRecord, ReplyData } from '@/types/bsky'
 import { DraftPost } from '@/types/drafts'
 import {
   Heart,
@@ -23,6 +23,7 @@ import { Button, LinkButton } from './ui/forms'
 import { useDraftContext } from '@/providers/DraftsProvider'
 import Image from 'next/image'
 import { useSettingsContext } from '@/providers/SettingsProvider'
+import { getVideoFilePath } from '@/helpers/utils'
 
 let BSKY_DISPLAY_NAME = 'Your Display Name' // TODO: Get this from app data
 let BSKY_IDENTIFIER = 'yourusername.bsky.social'
@@ -39,6 +40,42 @@ function getEditLink(draftId: string) {
 }
 
 function getDisplayDataFromPostData(postData: PostData): PostDisplayData {
+  const videoObj = {
+    url: '',
+    width: 0,
+    height: 0,
+    size: 0,
+  }
+
+  const record = postData.post.record as {
+    embed?: {
+      $type: string
+      aspectRatio: {
+        height: number
+        width: number
+      }
+      video: {
+        $type: string
+        ref: {
+          $link: string
+        }
+        mimeType: string
+        size: number
+      }
+    }
+  }
+
+  if (record?.embed && record.embed.$type === 'app.bsky.embed.video') {
+    videoObj.url =
+      getVideoFilePath(
+        postData.post.cid || '',
+        new Date(postData.post.indexedAt).getFullYear().toString()
+      ) || ''
+    videoObj.width = record.embed.aspectRatio?.width || videoObj.width
+    videoObj.height = record.embed.aspectRatio?.height || videoObj.height
+    videoObj.size = 0 // Size not provided in embed data
+  }
+
   return {
     text: postData.post.record?.text || '',
     author: postData.post.author,
@@ -54,14 +91,7 @@ function getDisplayDataFromPostData(postData: PostData): PostDisplayData {
           size: 0, // Size not provided in embed data
         }))
       : undefined,
-    video: postData.post.embed?.record
-      ? {
-          url: postData.post.embed.record?.thumbnail || '',
-          width: postData.post.embed.record?.aspectRatio?.width || 0,
-          height: postData.post.embed.record?.aspectRatio?.height || 0,
-          size: 0, // Size not provided in embed data
-        }
-      : undefined,
+    video: videoObj,
     isRepost: !!postData.reason,
     parent: postData.reply?.parent
       ? getDisplayDataFromPostData({ post: postData.reply.parent })
@@ -371,6 +401,24 @@ export default function Post({
       <ReplyParents parent={item.parent} root={item.root} />
       <div className="mb-2">{text}</div>
       <PostMediaCarousel media={item.images || []} />
+      {item.video && item.video.url && (
+        <div className="my-2">
+          <video
+            src={item.video.url}
+            controls
+            className="w-full max-h-[500px] rounded"
+          >
+            <track
+              kind="captions"
+              src=""
+              srcLang="en"
+              label="English captions"
+              default
+            />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      )}
       {/* Engagement metrics */}
       <div className="flex flex-row mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
         <div className="flex flex-1 gap-4">

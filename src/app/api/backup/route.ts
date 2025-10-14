@@ -1,42 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getBackup, runBackup } from '../services/BackupService'
-import Logger from '../helpers/logger'
+import { withBskyLogoutAndErrorHandling } from '../../api-helpers/apiWrapper'
+import Logger from '../../api-helpers/logger'
 
 const logger = new Logger('BackupRoute')
 
-export async function GET() {
-  try {
-    const backup = await getBackup()
-    return NextResponse.json(backup)
-  } catch (error) {
-    logger.error('Failed to fetch backup', error)
-    return NextResponse.json(
-      {
-        error: 'Failed to fetch backup',
-      },
-      { status: 500 }
-    )
-  }
-}
+// GET handler - wrapped with automatic Bluesky logout
+export const GET = withBskyLogoutAndErrorHandling(async () => {
+  logger.log('Starting backup fetch')
+  const backup = await getBackup()
+  return NextResponse.json(backup)
+})
 
-export async function POST(request: NextRequest) {
-  try {
-    await runBackup()
+// POST handler - wrapped with automatic Bluesky logout
+export const POST = withBskyLogoutAndErrorHandling(async () => {
+  logger.log('Starting backup run')
+  await runBackup()
 
-    return NextResponse.json({
-      success: true,
-      message: 'Backup completed successfully',
-    })
-  } catch (error) {
-    logger.error('Backup failed:', error)
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Backup failed',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    )
-  }
-}
+  return NextResponse.json({
+    success: true,
+    message: 'Backup completed successfully',
+  })
+})

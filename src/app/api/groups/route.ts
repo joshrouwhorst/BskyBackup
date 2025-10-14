@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getGroups } from '../services/DraftPostService'
-import Logger from '../helpers/logger'
+import Logger from '../../api-helpers/logger'
 
 const logger = new Logger('GroupsRoute')
 
