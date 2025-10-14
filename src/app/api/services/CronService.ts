@@ -6,6 +6,8 @@ import {
   publishNextPost,
 } from '../services/SchedulePostService'
 import { cron } from '@/app/api-helpers/cron'
+import { getAppData } from '@/app/api-helpers/appData'
+import { runBackup } from './BackupService'
 
 const CRON_MINUTES = 5
 const TASK_ID = `task-cron`
@@ -38,6 +40,7 @@ export async function ensureCronIsRunning() {
 }
 
 async function cronJob() {
+  await backupIfNeeded()
   await postIfNeeded()
   if (cron.hasTask(TASK_ID)) cron.removeTask(TASK_ID)
 
@@ -48,6 +51,39 @@ async function cronJob() {
     },
     CRON_MINUTES * 60 * 1000
   )
+}
+
+export async function backupIfNeeded() {
+  const appData = await getAppData()
+  const settings = appData.settings
+  if (
+    !settings?.autoBackupFrequencyMinutes ||
+    settings.autoBackupFrequencyMinutes <= 0
+  ) {
+    return // Auto backup not enabled
+  }
+
+  const now = new Date()
+  const lastBackup = appData?.lastBackup ? new Date(appData.lastBackup) : null
+
+  if (!lastBackup) {
+    logger.log('No previous backup found, running backup now.')
+    const { runBackup } = await import('./BackupService')
+    await runBackup()
+    return
+  }
+
+  const nextBackup = new Date(
+    lastBackup.getTime() + settings.autoBackupFrequencyMinutes * 60 * 1000
+  )
+
+  if (nextBackup <= now) {
+    logger.log(
+      `Last backup was on ${lastBackup.toISOString()}, running backup now.`
+    )
+
+    await runBackup()
+  }
 }
 
 export async function postIfNeeded() {

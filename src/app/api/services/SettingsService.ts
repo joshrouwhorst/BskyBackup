@@ -17,6 +17,7 @@ const defaults: Settings = {
   bskyPassword: BSKY_PASSWORD || '',
   backupLocation: DATA_LOCATION || '',
   pruneAfterMonths: DEFAULT_PRUNE_MONTHS ? Number(DEFAULT_PRUNE_MONTHS) : 3,
+  autoBackupFrequencyMinutes: undefined,
   hasOnboarded: false,
 }
 

@@ -3,7 +3,7 @@ import * as blueskyHelpers from '../bluesky'
 import fs from 'fs/promises'
 import { DraftPost } from '@/types/drafts'
 
-jest.mock('@/app/api/helpers/appData', () => ({
+jest.mock('@/app/api-helpers/appData', () => ({
   getAppData: jest.fn().mockResolvedValue({
     lastBackup: null,
     postsOnBsky: 0,
@@ -22,7 +22,7 @@ jest.mock('@/app/api/helpers/appData', () => ({
   saveAppData: jest.fn().mockResolvedValue(undefined),
 }))
 
-jest.mock('@/app/api/helpers/logger', () => ({
+jest.mock('@/app/api-helpers/logger', () => ({
   __esModule: true,
   default: class {
     constructor() {}

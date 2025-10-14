@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { useSettingsContext } from '@/providers/SettingsProvider'
 import { Settings } from '@/types/types'
-import { Button, Input, Checkbox, Label } from '@/components/ui/forms'
+import { Button, Input, Checkbox, Label, Select } from '@/components/ui/forms'
 import Toast, { ToastProps } from '@/components/Toast'
 import TimezoneSelect from '@/components/schedules/TimezoneSelect'
 
@@ -93,6 +93,39 @@ export default function SettingsForm() {
               setFormState((prev) => ({ ...prev, defaultTimezone: value }))
             }
           />
+        </div>
+        <div className="mb-4">
+          <Label>Auto Backup</Label>
+          <Checkbox
+            name="autoBackupFrequencyMinutes"
+            id="autoBackupFrequencyMinutes"
+            checked={!!formState.autoBackupFrequencyMinutes}
+            onChange={(e) =>
+              setFormState((prev) => ({
+                ...prev,
+                autoBackupFrequencyMinutes: e.target.checked ? 60 : undefined,
+              }))
+            }
+          />
+          {formState.autoBackupFrequencyMinutes && (
+            <div className="mt-2">
+              <Label htmlFor="autoBackupFrequencyMinutesValue">
+                Frequency (minutes)
+              </Label>
+              <Input
+                type="number"
+                name="autoBackupFrequencyMinutesValue"
+                id="autoBackupFrequencyMinutesValue"
+                value={formState.autoBackupFrequencyMinutes || 60}
+                onChange={(e) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    autoBackupFrequencyMinutes: Number(e.target.value),
+                  }))
+                }
+              />
+            </div>
+          )}
         </div>
       </div>
 

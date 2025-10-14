@@ -16,6 +16,7 @@ export interface Settings {
   backupLocation?: string
   pruneAfterMonths?: number
   defaultTimezone?: string
+  autoBackupFrequencyMinutes?: number
   hasOnboarded: boolean
 }
 

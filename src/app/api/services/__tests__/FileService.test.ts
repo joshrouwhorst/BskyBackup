@@ -12,7 +12,7 @@ jest.mock('@/config/main', () => ({
   DATA_LOCATION: path.join(__dirname, 'test-files'),
 }))
 
-jest.mock('@/app/api/helpers/logger', () => ({
+jest.mock('@/app/api-helpers/logger', () => ({
   __esModule: true,
   default: jest.fn().mockImplementation(() => ({
     log: jest.fn(),

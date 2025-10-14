@@ -18,18 +18,20 @@ import {
 
 jest.mock('@/config/main', () => ({
   DEFAULT_GROUP: 'default',
+  APP_DATA_FILE: './test-app-data.json',
+  ENCRYPTION_KEY: 'test-encryption-key',
 }))
 
-jest.mock('../../helpers/appData', () => ({
+jest.mock('@/app/api-helpers/appData', () => ({
   getAppData: jest.fn(),
   saveAppData: jest.fn(),
 }))
-jest.mock('../DraftPostService', () => ({
+jest.mock('@/app/api/services/DraftPostService', () => ({
   getDraftPostsInGroup: jest.fn(),
   getDraftPosts: jest.fn(),
   publishDraftPost: jest.fn(),
 }))
-jest.mock('../../helpers/logger', () => {
+jest.mock('@/app/api-helpers/logger', () => {
   return {
     __esModule: true,
     default: jest.fn().mockImplementation(() => ({

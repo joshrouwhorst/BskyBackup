@@ -24,6 +24,7 @@ import { useDraftContext } from '@/providers/DraftsProvider'
 import Image from 'next/image'
 import { useSettingsContext } from '@/providers/SettingsProvider'
 import { getVideoFilePath } from '@/helpers/utils'
+import PostVideoPlayer from './PostVideoPlayer'
 
 let BSKY_DISPLAY_NAME = 'Your Display Name' // TODO: Get this from app data
 let BSKY_IDENTIFIER = 'yourusername.bsky.social'
@@ -316,6 +317,9 @@ export default function Post({
     return compactPostView({ displayData: item })
   }
 
+  const videoUrl =
+    item.video?.url && item.video.url !== '' ? item.video.url : null
+
   return (
     <div className="p-4 border border-gray-300 rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 shadow-md text-black dark:text-white">
       <div className="flex items-center justify-between mb-2">
@@ -401,24 +405,7 @@ export default function Post({
       <ReplyParents parent={item.parent} root={item.root} />
       <div className="mb-2">{text}</div>
       <PostMediaCarousel media={item.images || []} />
-      {item.video && item.video.url && (
-        <div className="my-2">
-          <video
-            src={item.video.url}
-            controls
-            className="w-full max-h-[500px] rounded"
-          >
-            <track
-              kind="captions"
-              src=""
-              srcLang="en"
-              label="English captions"
-              default
-            />
-            Your browser does not support the video tag.
-          </video>
-        </div>
-      )}
+      <PostVideoPlayer videoUrl={videoUrl || undefined} />
       {/* Engagement metrics */}
       <div className="flex flex-row mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
         <div className="flex flex-1 gap-4">
