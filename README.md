@@ -79,6 +79,8 @@ If you add new features, consider adding or updating test files to cover your ch
 
 [Docker Hub Repository](https://hub.docker.com/r/joshrouwhorst/bsky-backup)
 
+Make sure to map the directory you want your backup and draft data to live in to `/app/data` when creating your container.
+
 ```shell
  docker buildx build --platform linux/amd64,linux/arm64 --build-arg TARGETARCH=x64 --build-arg TARGETARCH=arm64 -t joshrouwhorst/bsky-backup:latest --push .
 ```
