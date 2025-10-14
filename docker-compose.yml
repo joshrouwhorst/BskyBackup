@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  bsky-backup:
+    build: .
+    container_name: bsky-backup
+    hostname: bsky-backup.local # This will be detected by the auto-detection logic
+    ports:
+      - '3232:3000' # Map host port 3232 to container port 3000
+    volumes:
+      - ./data:/app/data # Persistent storage for backups and OAuth keys
+    environment:
+      # Option 1: Explicit URL (replace with your NAS IP/hostname)
+      - BSKY_BACKUP_URL=https://192.168.1.87:3232
+
+      # Option 2: Let it auto-detect from hostname + external port
+      # - EXTERNAL_PORT=8080
+      # - HOSTNAME=bsky-backup.local
+
+      # App settings
+      - NODE_ENV=production
+      - PORT=3000
+      - DEFAULT_DATA_LOCATION=/app/data
+    restart: unless-stopped
+    networks:
+      - bsky-network
+
+networks:
+  bsky-network:
+    driver: bridge
+
+volumes:
+  data:

@@ -10,6 +10,10 @@ const logger = new Logger('AppData')
 
 const IV_LENGTH = 16
 
+let _cache: AppData | null = null
+const CACHE_DURATION_MS = 5 * 60 * 1000 // 5 minutes
+let _lastCacheTime = 0
+
 function encrypt(text: string): string {
   const iv = crypto.randomBytes(IV_LENGTH)
   const cipher = crypto.createCipheriv(
@@ -36,17 +40,23 @@ function decrypt(text: string): string {
 }
 
 export async function getAppData(): Promise<AppData> {
+  if (_cache && Date.now() - _lastCacheTime < CACHE_DURATION_MS) return _cache
   await ensureDir(path.dirname(APP_DATA_FILE))
   if (!fs.existsSync(APP_DATA_FILE)) {
     return { lastBackup: null, postsOnBsky: 0, totalPostsBackedUp: 0 }
   }
   const encrypted = await fs.promises.readFile(APP_DATA_FILE, 'utf-8')
   const data = decrypt(encrypted)
-  return JSON.parse(data)
+  const appData = JSON.parse(data) as AppData
+  _cache = appData
+  _lastCacheTime = Date.now()
+  return appData
 }
 
 export async function saveAppData(data: AppData): Promise<void> {
   logger.log('Saving app data.')
+  _cache = data
+  _lastCacheTime = Date.now()
   await ensureDir(path.dirname(APP_DATA_FILE))
   const json = JSON.stringify(data)
   const encrypted = encrypt(json)

@@ -3,6 +3,9 @@ import { FeedViewPost } from '@/types/bsky'
 import { saveJsonToFile, readJsonFromFile, downloadFile } from './utils'
 import { getPaths } from '@/config/main'
 import Logger from './logger'
+import { saveBlobToFile } from './bluesky'
+import { checkIfExists } from '../services/FileService'
+import { AppBskyEmbedImages, AppBskyEmbedVideo } from '@atproto/api'
 
 const logger = new Logger('BackupFile')
 
@@ -30,13 +33,16 @@ export async function saveBackup(data: FeedViewPost[]): Promise<void> {
   await saveJsonToFile(data, postBackupFile)
 }
 
-export async function backupMediaFiles(post: FeedViewPost): Promise<number> {
+export async function backupMediaFiles(
+  feedViewPost: FeedViewPost
+): Promise<number> {
   let _fileWriteCount = 0
-  if (
-    post.post.embed &&
-    post.post.embed.$type === 'app.bsky.embed.images#view'
-  ) {
-    const embed = post.post.embed as any
+  const post = feedViewPost.post
+  const record = post.record
+
+  // Handle images
+  if (post.embed && post.embed.$type === 'app.bsky.embed.images#view') {
+    const embed = post.embed as AppBskyEmbedImages.View
     if (!embed.images || embed.images.length === 0) {
       return 0
     }
@@ -45,8 +51,8 @@ export async function backupMediaFiles(post: FeedViewPost): Promise<number> {
       const imageUrl = image.fullsize
       // Extract file extension from the URL after @ symbol, or default to .jpg
       const mediaType = getMediaType(imageUrl)
-      const mediaFilename = getMediaName(post.post, imageUrl, i)
-      const postDate = new Date(post.post.indexedAt)
+      const mediaFilename = getMediaName(feedViewPost.post, imageUrl, i)
+      const postDate = new Date(feedViewPost.post.indexedAt)
       const year = postDate.getFullYear().toString()
       const mediaLocation = await getMediaLocation(
         mediaFilename,
@@ -64,8 +70,26 @@ export async function backupMediaFiles(post: FeedViewPost): Promise<number> {
         _fileWriteCount++
       }
     }
+
+    return _fileWriteCount
   }
-  return _fileWriteCount
+
+  // Handle videos
+  const embed = record.embed as any
+
+  if (!embed.video) {
+    return 0
+  }
+
+  const write = await saveBlobData(
+    embed.video,
+    `video-${feedViewPost.post.cid}`,
+    feedViewPost.post.author.did
+  )
+
+  if (write) return 1
+
+  return 0
 }
 
 export function getMediaType(imageUrl: string): string {
@@ -108,4 +132,121 @@ export function getMediaName(
   const dateString = `${year}${month}${day}_${hour}${minute}${second}`
   const mediaFilename = `${dateString}_${mediaType}_${index}${mediaExtension}`
   return mediaFilename
+}
+
+/**
+ * Save blob data to filesystem using AT Protocol blob reference
+ * Supports both images and videos
+ * @param mediaBlob - The blob object from AT Protocol (image or video)
+ * @param filename - The filename to save as
+ * @param userDid - The DID of the user who owns the blob
+ * @returns Promise<boolean> - true if successful
+ *
+ * Usage examples:
+ * const success = await saveBlobData(imageBlob, 'my-image.jpg', 'did:plc:example123')
+ * const success = await saveBlobData(videoBlob, 'my-video.mp4', 'did:plc:example123')
+ */
+export async function saveBlobData(
+  mediaBlob: {
+    ref: {
+      bytes?: Uint8Array
+      $link?: string
+    }
+    mimeType: string
+    size: number
+  },
+  filename: string,
+  userDid: string
+): Promise<boolean> {
+  try {
+    // Get the media extension from mime type
+    const extension = getExtensionFromMimeType(mediaBlob.mimeType)
+
+    // Create full filename with extension if not provided
+    const fullFilename = filename.includes('.')
+      ? filename
+      : `${filename}.${extension}`
+
+    // Get media storage location
+    const postDate = new Date()
+    const year = postDate.getFullYear().toString()
+    const mediaLocation = await getMediaLocation(fullFilename, year, extension)
+
+    // If the file already exists, skip saving
+    const fileExists = await checkIfExists(mediaLocation)
+    if (fileExists) return false
+
+    // Use the blob save function from bluesky.ts
+    const success = await saveBlobToFile(mediaBlob, mediaLocation, userDid)
+
+    if (success) {
+      const mediaType = mediaBlob.mimeType.startsWith('video/')
+        ? 'video'
+        : 'image'
+      logger.log(`Successfully saved ${mediaType} blob to: ${mediaLocation}`)
+    } else {
+      logger.error(`Failed to save blob to: ${mediaLocation}`)
+    }
+
+    return success
+  } catch (error) {
+    logger.error('Error in saveBlobData:', error)
+    return false
+  }
+}
+
+/**
+ * Get file extension from MIME type, with support for common video formats
+ */
+function getExtensionFromMimeType(mimeType: string): string {
+  const mimeToExtension: Record<string, string> = {
+    // Image formats
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+    'image/svg+xml': 'svg',
+    'image/bmp': 'bmp',
+    'image/tiff': 'tiff',
+
+    // Video formats
+    'video/mp4': 'mp4',
+    'video/webm': 'webm',
+    'video/ogg': 'ogv',
+    'video/avi': 'avi',
+    'video/mov': 'mov',
+    'video/wmv': 'wmv',
+    'video/flv': 'flv',
+    'video/3gp': '3gp',
+    'video/mkv': 'mkv',
+    'video/quicktime': 'mov',
+
+    // Audio formats (in case AT Protocol supports them)
+    'audio/mpeg': 'mp3',
+    'audio/wav': 'wav',
+    'audio/ogg': 'ogg',
+    'audio/aac': 'aac',
+  }
+
+  // Try exact match first
+  const exactMatch = mimeToExtension[mimeType.toLowerCase()]
+  if (exactMatch) {
+    return exactMatch
+  }
+
+  // Fall back to extracting from mime type
+  const parts = mimeType.split('/')
+  if (parts.length === 2) {
+    return parts[1].toLowerCase()
+  }
+
+  // Default fallback based on type
+  if (mimeType.startsWith('video/')) {
+    return 'mp4'
+  } else if (mimeType.startsWith('audio/')) {
+    return 'mp3'
+  } else {
+    return 'jpg'
+  }
 }

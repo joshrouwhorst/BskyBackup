@@ -19,7 +19,7 @@ import { addPost as addPostToBsky } from '@/app/api/helpers/bluesky'
 import { SocialPlatform } from '@/types/scheduler'
 import Logger from '../helpers/logger'
 import { setCache, getCache } from '../services/CacheService'
-import { ensureDir, safeName } from '../helpers/utils'
+import { ensureDir, removeDir, safeName } from '../helpers/utils'
 import {
   listFiles,
   checkIfExists,
@@ -315,13 +315,33 @@ export async function duplicateDraftPost(id: string): Promise<DraftPost> {
       const srcPath = path.join(src, entry.name)
       const destPath = path.join(dest, entry.name)
       if (entry.isDirectory) {
-        await copyRecursive(srcPath, destPath)
+        try {
+          await copyRecursive(srcPath, destPath)
+        } catch (err) {
+          logger.error(
+            `Failed to copyRecursive ${srcPath} to ${destPath}: ${err}`
+          )
+          throw err
+        }
       } else {
-        await copyFilesOrDirectory(srcPath, destPath)
+        try {
+          await copyFilesOrDirectory(srcPath, destPath)
+        } catch (err) {
+          logger.error(
+            `Failed to copyFilesOrDirectory ${srcPath} to ${destPath}: ${err}`
+          )
+          throw err
+        }
       }
     }
   }
-  await copyRecursive(post.dir, fullPath)
+
+  try {
+    await copyRecursive(post.dir, fullPath)
+  } catch (err) {
+    await removeDir(fullPath) // Cleanup
+    throw err
+  }
 
   // Update meta.json with new id and createdAt
   const metaPath = path.join(fullPath, META_FILENAME)

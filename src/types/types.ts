@@ -1,3 +1,4 @@
+import { Session, InternalStateData, Key } from '@atproto/oauth-client'
 import { Schedule } from './scheduler'
 
 export interface AppData {
@@ -7,6 +8,9 @@ export interface AppData {
   oldestBskyPostDate?: string | null
   schedules?: Schedule[] | null
   settings?: Settings | null
+  bskySession?: { [key: string]: Session } | null
+  bskyState?: { [key: string]: InternalStateData } | null
+  oauthKeys?: { RS256: Key; ES256: Key } | null
 }
 
 export interface Settings {

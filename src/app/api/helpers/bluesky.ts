@@ -1,13 +1,14 @@
-import { AtpAgent } from '@atproto/api'
+import { AtpAgent, Agent, RichText } from '@atproto/api'
 import { FeedViewPost } from '@/types/bsky'
 import { DraftPost } from '@/types/drafts'
 import fs from 'fs/promises'
-import { Main } from '@atproto/api/dist/client/types/app/bsky/richtext/facet'
 import { Governor } from './governor'
 import Logger from '../helpers/logger'
 import { getSettings } from '../services/SettingsService'
 import { getPaths, PREVENT_POSTING } from '@/config/main'
 import { wait } from '@/helpers/utils'
+import { getOAuthClient } from './bskyClient'
+import ExifReader from 'exifreader'
 
 const logger = new Logger('BlueskySvc')
 
@@ -21,6 +22,68 @@ export interface PostFilters {
 let postCache: FeedViewPost[] | null = null
 let cacheDate: Date | null = null
 const CACHE_DURATION_MS = 5 * 60 * 1000 // 5 minutes
+
+/**
+ * Create an authenticated AtpAgent using OAuth or username/password
+ * @returns Promise<AtpAgent> - Authenticated agent
+ */
+export async function createAuthenticatedAgent(): Promise<AtpAgent | Agent> {
+  // Check for app password options first, then OAuth
+  const settings = await getSettings()
+  const BSKY_IDENTIFIER =
+    settings?.bskyIdentifier || process.env.BSKY_IDENTIFIER
+  const BSKY_PASSWORD = settings?.bskyPassword || process.env.BSKY_PASSWORD
+
+  if (BSKY_IDENTIFIER && BSKY_PASSWORD) {
+    const agent = new AtpAgent({
+      service: 'https://bsky.social',
+    })
+
+    let loginAttempts = 0
+    const maxLoginAttempts = 5
+    // Retry login
+    while (loginAttempts < maxLoginAttempts) {
+      try {
+        await agent.login({
+          identifier: BSKY_IDENTIFIER,
+          password: BSKY_PASSWORD,
+        })
+        console.log('Successfully authenticated with Bluesky')
+        break
+      } catch (loginError) {
+        loginAttempts++
+        console.error(`Login attempt ${loginAttempts} failed:`, loginError)
+
+        if (loginAttempts >= maxLoginAttempts) {
+          throw new Error(
+            `Failed to login after ${maxLoginAttempts} attempts: ${
+              loginError instanceof Error ? loginError.message : 'Unknown error'
+            }`
+          )
+        }
+
+        // Wait before retrying
+        await wait(2000)
+      }
+    }
+
+    return agent
+  }
+
+  if (!BSKY_IDENTIFIER) {
+    logger.error('Bluesky identifier is not set in settings')
+    throw new Error('Bluesky identifier is not set in settings')
+  }
+
+  // Use OAuth authentication
+  const oauthClient = await getOAuthClient()
+  if (!oauthClient) {
+    throw new Error('Failed to create OAuth client')
+  }
+
+  const oauthSession = await oauthClient.restore(BSKY_IDENTIFIER)
+  return new Agent(oauthSession)
+}
 
 export async function getPosts(
   config?: PostFilters,
@@ -53,18 +116,13 @@ export async function getPosts(
 
   const postList: FeedViewPost[] = []
 
-  const agent = new AtpAgent({
-    service: 'https://bsky.social',
-  })
+  const agent = await createAuthenticatedAgent()
+  if (!agent) {
+    logger.error('Failed to create authenticated agent')
+    throw new Error('Unauthenticated')
+  }
 
   try {
-    logger.log(`Authenticating with Bluesky as ${BSKY_IDENTIFIER}...`)
-    await agent.login({
-      identifier: BSKY_IDENTIFIER,
-      password: BSKY_PASSWORD,
-    })
-    logger.log('Successfully authenticated with Bluesky')
-
     let cursor: string | undefined
 
     do {
@@ -107,7 +165,9 @@ export async function getPosts(
     )
   } finally {
     try {
-      await agent.logout()
+      if (agent instanceof AtpAgent) {
+        await agent.logout()
+      }
     } catch (logoutError) {
       logger.error('Error during logout:', logoutError)
     }
@@ -118,26 +178,9 @@ export async function getPosts(
 
 export async function deletePostsWithUris(postUris: string[]): Promise<void> {
   await governor.wait()
-  const agent = new AtpAgent({
-    service: 'https://bsky.social',
-  })
+  const agent = await createAuthenticatedAgent()
 
   try {
-    const settings = await getSettings()
-    const BSKY_IDENTIFIER =
-      settings?.bskyIdentifier || process.env.BSKY_IDENTIFIER
-    const BSKY_PASSWORD = settings?.bskyPassword || process.env.BSKY_PASSWORD
-    if (!BSKY_IDENTIFIER || !BSKY_PASSWORD) {
-      logger.error('Cannot find Bluesky credentials in settings')
-      throw new Error('Bluesky credentials are not set in settings')
-    }
-    console.log(`Authenticating with Bluesky as ${BSKY_IDENTIFIER}...`)
-    await agent.login({
-      identifier: BSKY_IDENTIFIER,
-      password: BSKY_PASSWORD,
-    })
-    console.log('Successfully authenticated with Bluesky')
-
     for (const postUri of postUris) {
       logger.log(`Deleting post: ${postUri}`)
       if (PREVENT_POSTING) {
@@ -158,7 +201,9 @@ export async function deletePostsWithUris(postUris: string[]): Promise<void> {
     )
   } finally {
     try {
-      await agent.logout()
+      if (agent instanceof AtpAgent) {
+        await agent.logout()
+      }
     } catch (logoutError) {
       console.warn('Error during logout:', logoutError)
     }
@@ -167,53 +212,16 @@ export async function deletePostsWithUris(postUris: string[]): Promise<void> {
 
 export async function deletePosts(config: PostFilters): Promise<void> {
   await governor.wait()
-  const agent = new AtpAgent({
-    service: 'https://bsky.social',
-  })
+  const agent = await createAuthenticatedAgent()
+  const settings = await getSettings()
+  const BSKY_IDENTIFIER = settings.bskyIdentifier
+  if (!BSKY_IDENTIFIER) {
+    throw new Error('BSKY_IDENTIFIER is not defined')
+  }
 
   try {
-    const settings = await getSettings()
-    const BSKY_IDENTIFIER =
-      settings?.bskyIdentifier || process.env.BSKY_IDENTIFIER
-    const BSKY_PASSWORD = settings?.bskyPassword || process.env.BSKY_PASSWORD
-    if (!BSKY_IDENTIFIER || !BSKY_PASSWORD) {
-      logger.error('Cannot find Bluesky credentials in settings')
-      throw new Error('Bluesky credentials are not set in settings')
-    }
-
     if (!config.cutoffDate) {
       throw new Error('cutoffDate is required to delete posts')
-    }
-
-    console.log(`Authenticating with Bluesky as ${BSKY_IDENTIFIER}...`)
-
-    // Login to Bluesky with retry logic
-    let loginAttempts = 0
-    const maxLoginAttempts = 3
-
-    while (loginAttempts < maxLoginAttempts) {
-      try {
-        await agent.login({
-          identifier: BSKY_IDENTIFIER,
-          password: BSKY_PASSWORD,
-        })
-        console.log('Successfully authenticated with Bluesky')
-        break
-      } catch (loginError) {
-        loginAttempts++
-        console.error(`Login attempt ${loginAttempts} failed:`, loginError)
-
-        if (loginAttempts >= maxLoginAttempts) {
-          throw new Error(
-            `Failed to login after ${maxLoginAttempts} attempts: ${
-              loginError instanceof Error ? loginError.message : 'Unknown error'
-            }`
-          )
-        }
-
-        // Wait before retrying
-        await new Promise((resolve) => setTimeout(resolve, 2000))
-      }
     }
 
     let cursor: string | undefined
@@ -293,7 +301,7 @@ export async function deletePosts(config: PostFilters): Promise<void> {
         await agent.deletePost(postUri)
 
         // Add delay between deletions to avoid rate limiting
-        await wait(500)
+        await wait(1000)
       } catch (deleteError) {
         logger.error(`Error deleting post ${postUri}:`, deleteError)
 
@@ -319,7 +327,9 @@ export async function deletePosts(config: PostFilters): Promise<void> {
     )
   } finally {
     try {
-      await agent.logout()
+      if (agent instanceof AtpAgent) {
+        await agent.logout()
+      }
     } catch (logoutError) {
       console.warn('Error during logout:', logoutError)
     }
@@ -340,26 +350,10 @@ function removeOriginalPosts(posts: FeedViewPost[]): FeedViewPost[] {
 
 export async function addPost(post: DraftPost) {
   await governor.wait()
-  const agent = new AtpAgent({
-    service: 'https://bsky.social',
-  })
+  const agent = await createAuthenticatedAgent()
 
   try {
-    const settings = await getSettings()
-    const BSKY_IDENTIFIER =
-      settings?.bskyIdentifier || process.env.BSKY_IDENTIFIER
-    const BSKY_PASSWORD = settings?.bskyPassword || process.env.BSKY_PASSWORD
-    if (!BSKY_IDENTIFIER || !BSKY_PASSWORD) {
-      logger.error('Cannot find Bluesky credentials in settings')
-      throw new Error('Bluesky credentials are not set in settings')
-    }
-
     const { draftPostsPath } = await getPaths()
-
-    await agent.login({
-      identifier: BSKY_IDENTIFIER,
-      password: BSKY_PASSWORD,
-    })
 
     if (PREVENT_POSTING) {
       logger.log('PREVENT_POSTING is enabled, skipping actual posting.')
@@ -378,13 +372,41 @@ export async function addPost(post: DraftPost) {
         }
         parts.push(post.meta.directoryName, post.meta.mediaDir, image.filename)
         const path = parts.join('/')
-        const imageData = await fs.readFile(path) // or however you get the image data
+        const imageData = await fs.readFile(path)
+
+        let altText = 'Photograph'
+        try {
+          // Check for an ImageDescription on the image to set the alt text
+          const tags = ExifReader.load(imageData)
+          if (
+            tags.ImageDescription?.value &&
+            typeof tags.ImageDescription?.value === 'string'
+          ) {
+            altText = tags.ImageDescription.value // string
+          } else if (
+            tags.ImageDescription?.value &&
+            Array.isArray(tags.ImageDescription?.value) &&
+            tags.ImageDescription?.value.length > 0 &&
+            typeof tags.ImageDescription?.value[0] === 'string'
+          ) {
+            altText = tags.ImageDescription.value[0] // string[]
+          } else if (
+            tags.ImageDescription?.value &&
+            Array.isArray(tags.ImageDescription?.value) &&
+            tags.ImageDescription?.value.length > 0
+          ) {
+            altText = tags.ImageDescription.value[0].toString() // XmpTag[]
+          }
+        } catch (err) {
+          logger.log('Could not extract image metadata for alt text:', err)
+        }
+
         await governor.wait(200)
         const uploadResponse = await agent.uploadBlob(imageData, {
           encoding: image.mime || 'image/jpeg',
         })
         uploadedImages.push({
-          alt: 'Photograph',
+          alt: altText,
           image: uploadResponse.data.blob,
         })
       }
@@ -404,14 +426,16 @@ export async function addPost(post: DraftPost) {
       }
     }
 
-    const facets = post.meta.text ? getFacetsFromText(post.meta.text) : []
+    const richText = new RichText({ text: post.meta.text || '' })
+
+    await richText.detectFacets(agent)
 
     await governor.wait(200)
     await agent.post({
-      text: post.meta.text,
+      text: richText.text,
       createdAt: new Date().toISOString(),
       langs: ['en'],
-      facets,
+      facets: richText.facets,
       embed:
         uploadedImages.length > 0
           ? {
@@ -434,166 +458,121 @@ export async function addPost(post: DraftPost) {
   } finally {
     // Always logout in finally block
     try {
-      await agent.logout()
+      if (agent instanceof AtpAgent) {
+        await agent.logout()
+      }
     } catch (logoutError) {
       console.warn('Error during logout:', logoutError)
     }
   }
 }
 
-// Convert UTF-16 code-unit index/length to UTF-8 byte offsets
-function utf16IndexToUtf8ByteOffset(str: string, utf16Index: number) {
-  // take substring up to utf16Index, encode as UTF-8, return byte length
-  return new TextEncoder().encode(str.slice(0, utf16Index)).length
+/**
+ * Download blob data from Bluesky and save it to filesystem
+ * @param blobRef - The blob reference (supports both $link and bytes formats)
+ * @param filePath - The file path where the blob should be saved
+ * @param did - The DID of the user who owns the blob
+ * @returns Promise<boolean> - true if successful, false otherwise
+ */
+export async function saveBlobToFile(
+  blobRef: {
+    ref: {
+      $link?: string
+      bytes?: Uint8Array
+    }
+    mimeType: string
+    size: number
+  },
+  filePath: string,
+  did: string
+): Promise<boolean> {
+  try {
+    const settings = await getSettings()
+    const BSKY_IDENTIFIER =
+      settings?.bskyIdentifier || process.env.BSKY_IDENTIFIER
+    const BSKY_PASSWORD = settings?.bskyPassword || process.env.BSKY_PASSWORD
+
+    if (!BSKY_IDENTIFIER || !BSKY_PASSWORD) {
+      logger.error('Cannot find Bluesky credentials for blob download')
+      return false
+    }
+
+    const agent = new AtpAgent({
+      service: 'https://bsky.social',
+    })
+
+    await governor.wait()
+
+    await agent.login({
+      identifier: BSKY_IDENTIFIER,
+      password: BSKY_PASSWORD,
+    })
+
+    // Get CID from either $link or bytes format
+    let cid: string
+    if (blobRef.ref.$link) {
+      cid = blobRef.ref.$link
+    } else if (blobRef.ref.bytes) {
+      cid = bytesToCid(blobRef.ref.bytes)
+    } else {
+      logger.error('Invalid blob reference format')
+      return false
+    }
+
+    await governor.wait(1000)
+    // Download the blob using the AT Protocol
+    const response = await agent.com.atproto.sync.getBlob({
+      cid,
+      did,
+    })
+
+    if (response.success && response.data) {
+      // Ensure directory exists
+      const path = require('path')
+      const dir = path.dirname(filePath)
+      await fs.mkdir(dir, { recursive: true })
+
+      // Save the blob data to file
+      await fs.writeFile(filePath, new Uint8Array(response.data))
+      logger.log(`Blob saved successfully to ${filePath}`)
+      return true
+    } else {
+      logger.error('Failed to download blob:', response)
+      return false
+    }
+  } catch (error) {
+    logger.error('Error downloading blob:', error)
+    return false
+  }
 }
 
-function utf16RangeToUtf8ByteRange(
-  str: string,
-  utf16Start: number,
-  utf16Length: number
-) {
-  const byteStart = utf16IndexToUtf8ByteOffset(str, utf16Start)
-  const byteEnd =
-    byteStart +
-    new TextEncoder().encode(str.slice(utf16Start, utf16Start + utf16Length))
-      .length
-  return { byteStart, byteEnd }
-}
+/**
+ * Convert raw CID bytes to string format
+ * This handles the multihash format used in AT Protocol
+ */
+function bytesToCid(bytes: Uint8Array): string {
+  // Convert Uint8Array to base58btc string (CID v1 format)
+  // This is a simple base58 encoding for the CID
+  const alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+  let result = ''
+  let num = BigInt(0)
 
-export function getFacetsFromText(text: string): Main[] {
-  return text
-    .split(/(\s+)/)
-    .map((part) => {
-      // Handle URLs
-      if (part.match(/^https?:\/\/\S+/)) {
-        const { byteStart, byteEnd } = utf16RangeToUtf8ByteRange(
-          text,
-          text.indexOf(part),
-          part.length
-        )
-        return {
-          $type: 'app.bsky.richtext.facet',
-          index: {
-            byteStart,
-            byteEnd,
-          },
-          features: [
-            {
-              $type: 'app.bsky.richtext.facet#link',
-              uri: part,
-            },
-          ],
-        } as Main
-      }
-      // Handle mentions
-      if (part.match(/^@\w+/)) {
-        const { byteStart, byteEnd } = utf16RangeToUtf8ByteRange(
-          text,
-          text.indexOf(part),
-          part.length
-        )
-        return {
-          $type: 'app.bsky.richtext.facet',
-          index: {
-            byteStart,
-            byteEnd,
-          },
-          features: [
-            {
-              $type: 'app.bsky.richtext.facet#mention',
-              did: 'did:example:' + part.slice(1), // Placeholder DID, replace with actual lookup if available
-            },
-          ],
-        }
-      }
-      // Handle hashtags
-      if (part.match(/^#\w+/)) {
-        const { byteStart, byteEnd } = utf16RangeToUtf8ByteRange(
-          text,
-          text.indexOf(part),
-          part.length
-        )
-        return {
-          $type: 'app.bsky.richtext.facet',
-          index: {
-            byteStart,
-            byteEnd,
-          },
-          features: [
-            {
-              $type: 'app.bsky.richtext.facet#tag',
-              tag: part.slice(1),
-            },
-          ],
-        }
-      }
-      return null
-    })
-    .filter((f): f is Main => f !== null)
-}
-
-export function oldGetFacetsFromText(text: string): Main[] {
-  const facets: Main[] = []
-  const mentionRegex = /@([a-zA-Z0-9_\.]+)/g
-  const urlRegex = /(https?:\/\/[^\s]+)/g
-  const tagRegex = /#(\w+)/g
-
-  let match: RegExpExecArray | null
-  const encoder = new TextEncoder()
-  match = mentionRegex.exec(text)
-  while (match !== null) {
-    const utf16Index = match.index
-    const byteStart = encoder.encode(text.slice(0, utf16Index)).length
-    const byteEnd = byteStart + encoder.encode(match[0]).length
-
-    facets.push({
-      $type: 'app.bsky.richtext.facet',
-      index: { byteStart, byteEnd },
-      features: [
-        {
-          $type: 'app.bsky.richtext.facet#mention',
-          did: 'did:example:' + match[1], // Placeholder DID, replace with actual lookup if available
-        },
-      ],
-    })
-    match = mentionRegex.exec(text)
+  // Convert bytes to BigInt
+  for (let i = 0; i < bytes.length; i++) {
+    num = num * BigInt(256) + BigInt(bytes[i])
   }
 
-  match = urlRegex.exec(text)
-  while (match !== null) {
-    const utf16Index = match.index
-    const byteStart = encoder.encode(text.slice(0, utf16Index)).length
-    const byteEnd = byteStart + encoder.encode(match[0]).length
-    facets.push({
-      $type: 'app.bsky.richtext.facet',
-      index: { byteStart, byteEnd },
-      features: [
-        {
-          $type: 'app.bsky.richtext.facet#link',
-          uri: match[0],
-        },
-      ],
-    })
-    match = urlRegex.exec(text)
+  // Convert to base58
+  while (num > 0) {
+    const remainder = Number(num % BigInt(58))
+    result = alphabet[remainder] + result
+    num = num / BigInt(58)
   }
 
-  match = tagRegex.exec(text)
-  while (match !== null) {
-    const utf16Index = match.index
-    const byteStart = encoder.encode(text.slice(0, utf16Index)).length
-    const byteEnd = byteStart + encoder.encode(match[0]).length
-    facets.push({
-      $type: 'app.bsky.richtext.facet',
-      index: { byteStart, byteEnd },
-      features: [
-        {
-          $type: 'app.bsky.richtext.facet#tag',
-          tag: match[1],
-        },
-      ],
-    })
-    match = tagRegex.exec(text)
+  // Handle leading zeros
+  for (let i = 0; i < bytes.length && bytes[i] === 0; i++) {
+    result = alphabet[0] + result
   }
 
-  return facets
+  return result
 }
