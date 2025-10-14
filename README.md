@@ -33,18 +33,16 @@ APP_DATA_ENCRYPTION_KEY='your value here'
 
 APP_DATA_ENCRYPTION_KEY is an encryption key for encoding settings including social media credentials for the app. For maximum security it should be 32 characters long.
 
-You can use [Bun](https://bun.sh/) runtime, or [npm](https://www.npmjs.com/) should work as well.
-
 Install dependencies:
 
 ```shell
-bun i
+npm i
 ```
 
 Run the development server:
 
 ```shell
-bun dev
+npm run dev
 ```
 
 Open [https://localhost:3000](https://localhost:3000) in your browser.
@@ -62,13 +60,13 @@ This project does not include a formal automated test suite, but you can run uni
 Make sure you have all dependencies installed:
 
 ```sh
-bun install
+npm install
 ```
 
 Run the tests with:
 
 ```sh
-bun test
+npm run test
 ```
 
 Test files are located alongside source files, typically in `__tests__` directories (e.g., `src/app/api/helpers/__tests__/`).
