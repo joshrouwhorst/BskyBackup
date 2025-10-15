@@ -59,7 +59,7 @@ npm run dev
 
 Open [https://localhost:3000](https://localhost:3000) in your browser.
 
-You should be redirected to [https://localhost:3000/settings](https://localhost:3000/settings) until you input required information for setup such as your desired backup location on your file system and your Bluesky credentials.
+You should be redirected to [https://localhost:3000/settings](https://localhost:3000/settings) until you input required information for setup such as your Bluesky credentials, which is encrypted on your filesystem.
 
 ### Bluesky Credentials
 
