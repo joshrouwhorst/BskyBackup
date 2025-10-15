@@ -9,6 +9,8 @@ WORKDIR /app
 COPY . .
 ARG TARGETARCH
 ARG TARGETOS
+ARG SKIP_LINT=false
+ENV NEXT_LINT=${SKIP_LINT}
 RUN npm install --os=${TARGETOS} --cpu=${TARGETARCH}
 RUN npm rebuild
 RUN npm install --no-save --platform=linux --arch=x64 lightningcss
