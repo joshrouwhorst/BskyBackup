@@ -7,11 +7,11 @@ import React, {
   useState,
   ReactNode,
 } from 'react'
-import { PostData } from '@/types/bsky'
 import { useBskyBackup } from '@/hooks/useBskyBackup'
+import { PostDisplayData } from '@/types/types'
 
 interface BackupContextType {
-  posts: PostData[]
+  posts: PostDisplayData[]
   isLoading: boolean
   filters: {
     hasMedia: boolean | null
@@ -21,8 +21,8 @@ interface BackupContextType {
   removeFilter: () => void
   clearFilters: () => void
   refresh: () => Promise<void>
-  runBackup: () => Promise<PostData[]>
-  pruneBsky: () => Promise<PostData[]>
+  runBackup: () => Promise<void>
+  pruneBsky: () => Promise<void>
 }
 
 // Create the context

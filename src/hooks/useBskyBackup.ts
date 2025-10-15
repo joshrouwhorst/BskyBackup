@@ -1,8 +1,8 @@
-import { PostData } from '@/types/bsky'
+import { PostDisplayData } from '@/types/types'
 import { useCallback, useEffect, useState } from 'react'
 
 export function useBskyBackup() {
-  const [backup, setBackup] = useState<PostData[]>([])
+  const [backup, setBackup] = useState<PostDisplayData[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
@@ -11,7 +11,7 @@ export function useBskyBackup() {
     if (!response.ok) {
       throw new Error('Failed to fetch backup data')
     }
-    const data: PostData[] = await response.json()
+    const data: PostDisplayData[] = await response.json()
     return data
   }, [])
 
@@ -23,9 +23,7 @@ export function useBskyBackup() {
     if (!response.ok) {
       throw new Error('Failed to run backup')
     }
-    const data: PostData[] = await response.json()
     setLoading(false)
-    return data
   }, [])
 
   const pruneBsky = useCallback(async () => {
@@ -36,9 +34,7 @@ export function useBskyBackup() {
     if (!response.ok) {
       throw new Error('Failed to prune data')
     }
-    const data: PostData[] = await response.json()
     setLoading(false)
-    return data
   }, [])
 
   const refresh = useCallback(async () => {

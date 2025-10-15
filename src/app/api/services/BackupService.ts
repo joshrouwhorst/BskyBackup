@@ -12,6 +12,8 @@ import { formatDate } from '@/helpers/utils'
 import { getAppData, saveAppData } from '../../api-helpers/appData'
 import { getSettings } from './SettingsService'
 import { getCache, setCache } from './CacheService'
+import { getDisplayDataFromPostData } from '@/helpers/utils'
+import { PostDisplayData } from '@/components/Post'
 
 const logger = new Logger('BackupServ')
 const CACHE_ID = 'backupPosts'
@@ -31,6 +33,11 @@ export async function getBackup(): Promise<PostData[]> {
   const output = posts.map(transformFeedViewPostToPostData)
   _cache = setCache(CACHE_ID, output)
   return output
+}
+
+export async function getBackupAsPostDisplayData(): Promise<PostDisplayData[]> {
+  const posts = await getBackup()
+  return posts.map((post) => getDisplayDataFromPostData(post))
 }
 
 export async function runBackup() {

@@ -3,11 +3,13 @@
 import React from 'react'
 import type { PostData } from '@/types/bsky'
 import type { DraftPost } from '@/types/drafts'
+import type { PostDisplayData } from '@/types/types'
 import Post from '@/components/Post'
 
 interface PostListProps {
   context: () => {
-    posts?: PostData[]
+    posts?: PostDisplayData[]
+    backupPosts?: PostData[]
     drafts?: DraftPost[]
     isLoading: boolean
   }
@@ -15,7 +17,7 @@ interface PostListProps {
 }
 
 export default function PostList({ children, context }: PostListProps) {
-  const { posts, drafts, isLoading } = context()
+  const { posts, backupPosts, drafts, isLoading } = context()
 
   if (isLoading) {
     return (
@@ -43,6 +45,11 @@ export default function PostList({ children, context }: PostListProps) {
     <div className="relative">
       <ul className="flex flex-col items-center">
         {posts?.map((post) => (
+          <li key={post.postId} className="w-full max-w-2xl mb-4">
+            <Post displayData={post} />
+          </li>
+        ))}
+        {backupPosts?.map((post) => (
           <li key={post.post.cid} className="w-full max-w-2xl mb-4">
             <Post postData={post} />
           </li>

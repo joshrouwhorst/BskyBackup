@@ -2,6 +2,7 @@
 'use client'
 
 import React from 'react'
+import { RichText } from '@atproto/api'
 import { PostData, PostRecord, ReplyData } from '@/types/bsky'
 import { DraftPost } from '@/types/drafts'
 import {
@@ -22,12 +23,12 @@ import PostMediaCarousel from './PostMediaCarousel'
 import { Button, LinkButton } from './ui/forms'
 import { useDraftContext } from '@/providers/DraftsProvider'
 import Image from 'next/image'
-import { useSettingsContext } from '@/providers/SettingsProvider'
-import { getVideoFilePath } from '@/helpers/utils'
 import PostVideoPlayer from './PostVideoPlayer'
-
-let BSKY_DISPLAY_NAME = 'Your Display Name' // TODO: Get this from app data
-let BSKY_IDENTIFIER = 'yourusername.bsky.social'
+import {
+  getDisplayDataFromPostData,
+  getDisplayDataFromDraft,
+} from '@/helpers/utils'
+import { useSettingsContext } from '@/providers/SettingsProvider'
 
 interface PostProps {
   variant?: 'full' | 'compact'
@@ -40,101 +41,6 @@ function getEditLink(draftId: string) {
   return `/drafts/${draftId}`
 }
 
-function getDisplayDataFromPostData(postData: PostData): PostDisplayData {
-  const videoObj = {
-    url: '',
-    width: 0,
-    height: 0,
-    size: 0,
-  }
-
-  const record = postData.post.record as {
-    embed?: {
-      $type: string
-      aspectRatio: {
-        height: number
-        width: number
-      }
-      video: {
-        $type: string
-        ref: {
-          $link: string
-        }
-        mimeType: string
-        size: number
-      }
-    }
-  }
-
-  if (record?.embed && record.embed.$type === 'app.bsky.embed.video') {
-    videoObj.url =
-      getVideoFilePath(
-        postData.post.cid || '',
-        new Date(postData.post.indexedAt).getFullYear().toString()
-      ) || ''
-    videoObj.width = record.embed.aspectRatio?.width || videoObj.width
-    videoObj.height = record.embed.aspectRatio?.height || videoObj.height
-    videoObj.size = 0 // Size not provided in embed data
-  }
-
-  return {
-    text: postData.post.record?.text || '',
-    author: postData.post.author,
-    indexedAt: postData.post.indexedAt,
-    likeCount: postData.post.likeCount,
-    replyCount: postData.post.replyCount,
-    repostCount: postData.post.repostCount,
-    images: postData.post.embed?.images
-      ? postData.post.embed.images.map((img) => ({
-          url: img.local || img.fullsize,
-          width: img.aspectRatio.width,
-          height: img.aspectRatio.height,
-          size: 0, // Size not provided in embed data
-        }))
-      : undefined,
-    video: videoObj,
-    isRepost: !!postData.reason,
-    parent: postData.reply?.parent
-      ? getDisplayDataFromPostData({ post: postData.reply.parent })
-      : undefined,
-    root:
-      postData.reply?.root &&
-      postData.reply.root.uri !== postData.reply.parent?.uri
-        ? getDisplayDataFromPostData({ post: postData.reply.root })
-        : undefined,
-    postId: postData.post?.cid,
-  } as PostDisplayData
-}
-
-function getDisplayDataFromDraft(draftPost: DraftPost): PostDisplayData {
-  return {
-    text: draftPost.meta.text || '',
-    author: {
-      displayName: BSKY_DISPLAY_NAME, // TODO: Get this from bluesky profile data
-      handle: BSKY_IDENTIFIER,
-    },
-    indexedAt: draftPost.meta.createdAt,
-    isRepost: false,
-    images: draftPost.meta.images.map((img) => ({
-      url: img.url!,
-      width: img.width,
-      height: img.height,
-      size: img.size,
-    })),
-    video: draftPost.meta.video
-      ? {
-          url: draftPost.meta.video.url!,
-          width: draftPost.meta.video.width,
-          height: draftPost.meta.video.height,
-          size: draftPost.meta.video.size,
-        }
-      : undefined,
-    draftId: draftPost.meta.directoryName,
-    group: draftPost.group,
-    slug: draftPost.meta.slug,
-  } as PostDisplayData
-}
-
 export default function Post({
   variant,
   postData,
@@ -145,18 +51,17 @@ export default function Post({
     useDraftContext()
   const { settings } = useSettingsContext()
 
-  if (settings) {
-    BSKY_DISPLAY_NAME = settings.bskyDisplayName || BSKY_DISPLAY_NAME
-    BSKY_IDENTIFIER = settings.bskyIdentifier || BSKY_IDENTIFIER
-  }
-
   if (!variant) variant = 'full'
 
   // Handle conversions
   if (!displayData && postData) {
     displayData = getDisplayDataFromPostData(postData)
   } else if (!displayData && draftPost) {
-    displayData = getDisplayDataFromDraft(draftPost)
+    displayData = getDisplayDataFromDraft(
+      draftPost,
+      settings?.bskyDisplayName || 'Display Name',
+      settings?.bskyIdentifier || '@identifier'
+    )
   }
 
   const item = displayData

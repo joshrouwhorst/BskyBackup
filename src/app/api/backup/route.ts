@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
-import { getBackup, runBackup } from '../services/BackupService'
+import {
+  getBackupAsPostDisplayData,
+  runBackup,
+} from '../services/BackupService'
 import { withBskyLogoutAndErrorHandling } from '../../api-helpers/apiWrapper'
 import Logger from '../../api-helpers/logger'
 
@@ -8,7 +11,7 @@ const logger = new Logger('BackupRoute')
 // GET handler - wrapped with automatic Bluesky logout
 export const GET = withBskyLogoutAndErrorHandling(async () => {
   logger.log('Starting backup fetch')
-  const backup = await getBackup()
+  const backup = await getBackupAsPostDisplayData()
   return NextResponse.json(backup)
 })
 

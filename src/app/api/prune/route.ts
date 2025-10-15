@@ -7,8 +7,8 @@ const logger = new Logger('PruneRoute')
 
 export const POST = withBskyLogoutAndErrorHandling(async () => {
   try {
+    logger.log('Prune API request received')
     await prunePosts()
-
     return NextResponse.json({ success: true })
   } catch (error) {
     logger.error('Failed to prune posts', error)
