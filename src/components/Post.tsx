@@ -250,8 +250,11 @@ export default function Post({
               variant="icon"
               color="tertiary"
               onClick={async () => {
-                if (confirm('Are you sure you want to publish this draft?')) {
-                  await publishDraft(item.draftId!)
+                if (
+                  item.draftId &&
+                  confirm('Are you sure you want to publish this draft?')
+                ) {
+                  await publishDraft(item.draftId)
                   await refresh()
                 }
               }}

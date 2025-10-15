@@ -385,6 +385,7 @@ export async function addPost(post: DraftPost) {
     }
 
     const richText = new RichText({ text: post.meta.text || '' })
+    await richText.detectFacets(agent)
 
     await governor.wait(200)
     await agent.post({

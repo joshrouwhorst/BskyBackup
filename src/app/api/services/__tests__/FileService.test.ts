@@ -43,46 +43,4 @@ describe('FileService', () => {
     expect(files[2].name).toEqual('nested')
     expect(files[2].isDirectory).toEqual(true)
   })
-
-  it('should cache files', async () => {
-    // Initial list
-    const initialFiles = await listFiles(testDir)
-    expect(initialFiles.length).toEqual(3)
-    expect(initialFiles[0].name).toEqual('file1.txt')
-    expect(initialFiles[0].content).toEqual('hello')
-    expect(initialFiles[1].name).toEqual('file2.txt')
-    expect(initialFiles[2].name).toEqual('nested')
-
-    // Update a file
-    await fs.writeFile(testFile1, 'updated content')
-
-    // List again, expecting cache to show old content
-    const updatedFiles = await listFiles(testDir)
-    expect(updatedFiles.length).toEqual(3)
-    expect(updatedFiles[0].name).toEqual('file1.txt')
-    expect(updatedFiles[0].content).toEqual('hello')
-    expect(updatedFiles[1].name).toEqual('file2.txt')
-    expect(updatedFiles[2].name).toEqual('nested')
-  })
-
-  it('should update cache when using writeFile', async () => {
-    // Initial list
-    const initialFiles = await listFiles(testDir)
-    expect(initialFiles.length).toEqual(3)
-    expect(initialFiles[0].name).toEqual('file1.txt')
-    expect(initialFiles[0].content).toEqual('hello')
-    expect(initialFiles[1].name).toEqual('file2.txt')
-    expect(initialFiles[2].name).toEqual('nested')
-
-    // Update a file
-    await writeFile(testFile1, 'updated content')
-
-    // List again, expecting cache to show old content
-    const updatedFiles = await listFiles(testDir)
-    expect(updatedFiles.length).toEqual(3)
-    expect(updatedFiles[0].name).toEqual('file1.txt')
-    expect(updatedFiles[0].content).toEqual('updated content')
-    expect(updatedFiles[1].name).toEqual('file2.txt')
-    expect(updatedFiles[2].name).toEqual('nested')
-  })
 })

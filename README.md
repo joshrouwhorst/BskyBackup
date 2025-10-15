@@ -33,6 +33,18 @@ APP_DATA_ENCRYPTION_KEY='your value here'
 
 APP_DATA_ENCRYPTION_KEY is an encryption key for encoding settings including social media credentials for the app. For maximum security it should be 32 characters long.
 
+You can also set a specific default data location for the project. This is useful for local development if you have multiple accounts you're testing with. You can have a different directory for each one. Set this default directory in your `.env` file. If it does not exist, it should be created automatically.
+
+```txt
+DEFAULT_DATA_LOCATION="/Users/me/BskyBackup/data"
+```
+
+Also, if you want to make sure you don't accidentally post or delete to the live account, you can set this in your `.env` file.
+
+```txt
+PREVENT_POSTING="true"
+```
+
 Install dependencies:
 
 ```shell

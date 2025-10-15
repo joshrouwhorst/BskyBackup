@@ -24,10 +24,10 @@ import {
   listFiles,
   checkIfExists,
   writeFile,
-  readFile,
+  readText,
   deleteFileOrDirectory,
-  copyFilesOrDirectory,
-  moveFilesOrDirectory,
+  copyFileOrDirectory,
+  moveFileOrDirectory,
 } from './FileService'
 
 const META_FILENAME = 'meta.json'
@@ -143,7 +143,7 @@ export async function getDraftPost(
     return null
   }
 
-  const metaRaw = await readFile(path.join(fullPath, META_FILENAME))
+  const metaRaw = await readText(path.join(fullPath, META_FILENAME))
 
   if (!metaRaw) {
     throw new Error('meta.json not found or empty')
@@ -152,7 +152,7 @@ export async function getDraftPost(
   const meta = JSON.parse(metaRaw) as DraftMeta
 
   // Load text from text file
-  const text = await readText(fullPath)
+  const text = await readPostText(fullPath)
 
   const { images, video } = await readMedia(fullPath)
 
@@ -252,7 +252,7 @@ export async function createDraftPost(
   await writeMeta(postDir, meta)
 
   // Return post with text loaded from file
-  const postText = await readText(postDir)
+  const postText = await readPostText(postDir)
   logger.log(
     `Created draft post ${directoryName} in ${input.group || 'no group'}.`
   )
@@ -326,7 +326,7 @@ export async function duplicateDraftPost(id: string): Promise<DraftPost> {
         }
       } else {
         try {
-          await copyFilesOrDirectory(srcPath, destPath)
+          await copyFileOrDirectory(srcPath, destPath)
         } catch (err) {
           logger.error(`Failed to copy file ${srcPath} to ${destPath}`, err)
           throw err
@@ -344,7 +344,7 @@ export async function duplicateDraftPost(id: string): Promise<DraftPost> {
 
   // Update meta.json with new id and createdAt
   const metaPath = path.join(fullPath, META_FILENAME)
-  const metaRaw = await readFile(metaPath)
+  const metaRaw = await readText(metaPath)
   if (!metaRaw) throw new Error('Failed to read meta.json of duplicated post')
   const meta: DraftMeta = JSON.parse(metaRaw)
   meta.directoryName = newDirectoryName
@@ -538,10 +538,10 @@ async function writeText(dir: string, text: string) {
   await writeFile(p, text)
 }
 
-async function readText(dir: string): Promise<string> {
+async function readPostText(dir: string): Promise<string> {
   const p = path.join(dir, TEXT_FILENAME)
   try {
-    const data = await readFile(p)
+    const data = await readText(p)
     return data || ''
   } catch (err) {
     return '' // No text file means no text
@@ -776,7 +776,7 @@ async function updatePostDirectoryName(
   newPath: string
 ): Promise<void> {
   logger.log(`Updating directory name for post ${oldPath} to ${newPath}.`)
-  await moveFilesOrDirectory(oldPath, newPath)
+  await moveFileOrDirectory(oldPath, newPath)
 }
 
 async function movePostToGroup(
@@ -792,7 +792,7 @@ async function movePostToGroup(
   const baseName = path.basename(post.dir)
   const newDir = path.join(groupDir, baseName)
 
-  await moveFilesOrDirectory(post.dir, newDir)
+  await moveFileOrDirectory(post.dir, newDir)
   post.dir = newDir
   post.group = newGroup
   return post
@@ -810,7 +810,7 @@ async function movePostToPublished(post: DraftPost): Promise<DraftPost> {
 
   await ensureDir(newDir)
 
-  await moveFilesOrDirectory(post.dir, newDir)
+  await moveFileOrDirectory(post.dir, newDir)
   post.dir = newDir
   return post
 }
