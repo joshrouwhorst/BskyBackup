@@ -79,7 +79,7 @@ export default function SettingsForm() {
           onChange={handleChange}
         />
         <SettingsField
-          label="Prune After Months"
+          label="Prune Posts Older Than Months"
           name="pruneAfterMonths"
           value={formState.pruneAfterMonths || 6}
           type="number"
@@ -95,37 +95,87 @@ export default function SettingsForm() {
           />
         </div>
         <div className="mb-4">
-          <Label>Auto Backup</Label>
-          <Checkbox
-            name="autoBackupFrequencyMinutes"
-            id="autoBackupFrequencyMinutes"
-            checked={!!formState.autoBackupFrequencyMinutes}
-            onChange={(e) =>
-              setFormState((prev) => ({
-                ...prev,
-                autoBackupFrequencyMinutes: e.target.checked ? 60 : undefined,
-              }))
-            }
-          />
-          {formState.autoBackupFrequencyMinutes && (
-            <div className="mt-2">
-              <Label htmlFor="autoBackupFrequencyMinutesValue">
-                Frequency (minutes)
-              </Label>
-              <Input
-                type="number"
-                name="autoBackupFrequencyMinutesValue"
-                id="autoBackupFrequencyMinutesValue"
-                value={formState.autoBackupFrequencyMinutes || 60}
+          <div className="flex flex-row items-baseline gap-4">
+            <div>
+              <Label>Auto Prune</Label>
+              <Checkbox
+                name="autoPruneFrequencyMinutes"
+                id="autoPruneFrequencyMinutes"
+                checked={!!formState.autoPruneFrequencyMinutes}
                 onChange={(e) =>
                   setFormState((prev) => ({
                     ...prev,
-                    autoBackupFrequencyMinutes: Number(e.target.value),
+                    autoPruneFrequencyMinutes: e.target.checked
+                      ? 1 * 24 * 60 // default to once a day
+                      : undefined,
                   }))
                 }
               />
             </div>
-          )}
+            <div className="flex-1">
+              {formState.autoPruneFrequencyMinutes && (
+                <div className="mt-2">
+                  <Label htmlFor="autoPruneFrequencyMinutesValue">
+                    Frequency (minutes)
+                  </Label>
+                  <Input
+                    type="number"
+                    name="autoPruneFrequencyMinutesValue"
+                    id="autoPruneFrequencyMinutesValue"
+                    value={formState.autoPruneFrequencyMinutes || 60}
+                    onChange={(e) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        autoPruneFrequencyMinutes: Number(e.target.value),
+                      }))
+                    }
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <div className="flex flex-row items-baseline gap-4">
+            <div>
+              <Label>Auto Backup</Label>
+              <Checkbox
+                name="autoBackupFrequencyMinutes"
+                id="autoBackupFrequencyMinutes"
+                checked={!!formState.autoBackupFrequencyMinutes}
+                onChange={(e) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    autoBackupFrequencyMinutes: e.target.checked
+                      ? 1 * 60 // default to once an hour
+                      : undefined,
+                  }))
+                }
+              />
+            </div>
+            <div className="flex-1">
+              {formState.autoBackupFrequencyMinutes && (
+                <div className="mt-2">
+                  <Label htmlFor="autoBackupFrequencyMinutesValue">
+                    Frequency (minutes)
+                  </Label>
+                  <Input
+                    type="number"
+                    name="autoBackupFrequencyMinutesValue"
+                    id="autoBackupFrequencyMinutesValue"
+                    value={formState.autoBackupFrequencyMinutes || 60}
+                    onChange={(e) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        autoBackupFrequencyMinutes: Number(e.target.value),
+                      }))
+                    }
+                  />
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

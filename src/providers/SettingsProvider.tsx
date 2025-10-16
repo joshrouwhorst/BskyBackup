@@ -6,8 +6,9 @@ import React, {
   useEffect,
   useState,
   ReactNode,
+  useCallback,
 } from 'react'
-import { AppData, Settings } from '@/types/types'
+import { Settings } from '@/types/types'
 import { useSettings } from '@/hooks/useSettings'
 
 interface SettingsContextType {
@@ -19,7 +20,9 @@ interface SettingsContextType {
 }
 
 // Create the context
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined)
+const SettingsContext = createContext<SettingsContextType | undefined>(
+  undefined
+)
 
 interface SettingsProviderProps {
   children: ReactNode
@@ -27,7 +30,8 @@ interface SettingsProviderProps {
 
 export default function SettingsProvider({ children }: SettingsProviderProps) {
   const [settings, setSettings] = useState<Settings | null>(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('settings') : null
+    const stored =
+      typeof window !== 'undefined' ? localStorage.getItem('settings') : null
     return stored ? JSON.parse(stored) : null
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -35,7 +39,7 @@ export default function SettingsProvider({ children }: SettingsProviderProps) {
 
   const { fetchSettings, updateSettings } = useSettings()
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
@@ -47,7 +51,7 @@ export default function SettingsProvider({ children }: SettingsProviderProps) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [fetchSettings])
 
   const update = async (newSettings: Partial<Settings>) => {
     setIsLoading(true)
@@ -65,19 +69,17 @@ export default function SettingsProvider({ children }: SettingsProviderProps) {
 
   useEffect(() => {
     const checkOnboarding = async () => {
-      await refresh()
       if (
         (settings === null || !settings.hasOnboarded) &&
         window.location.pathname !== '/settings'
       ) {
-        debugger
         // Redirect to /settings
         console.log('Redirecting to /settings for onboarding')
         window.location.href = '/settings'
       }
-    } 
+    }
     checkOnboarding()
-  }, [])
+  }, [settings, settings?.hasOnboarded])
 
   const contextValue: SettingsContextType = {
     settings,

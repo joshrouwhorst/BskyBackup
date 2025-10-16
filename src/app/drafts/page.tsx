@@ -8,13 +8,13 @@ import { Plus } from 'lucide-react'
 export default async function Drafts() {
   return (
     <DraftsProvider>
-      <div className="flex flex-col md:flex-row justify-center gap-4">
-        <main>
+      <div className="flex flex-col-reverse md:flex-row justify-center gap-4">
+        <main className="*:w-full md:w-1/2">
           <DraftListFilters />
           <DraftPostList />
         </main>
-        <aside className="block md:w-1/4">
-          <h2 className="text-lg font-semibold">Draft List</h2>
+        <aside className="*:w-full md:w-1/2">
+          <h1 className="text-2xl font-bold mb-4">Draft List</h1>
           <div className="mt-2">
             <LinkButton
               variant="primary"

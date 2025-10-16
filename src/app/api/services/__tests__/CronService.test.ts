@@ -1,4 +1,4 @@
-import { backupIfNeeded } from '../CronService'
+import { backupIfNeeded, pruneIfNeeded } from '../CronService'
 import * as appDataHelper from '@/app/api-helpers/appData'
 import * as BackupService from '../BackupService'
 
@@ -25,9 +25,64 @@ jest.mock('@/app/api-helpers/logger', () => ({
   })),
 }))
 jest.mock('@/app/api-helpers/appData')
-jest.mock('../BackupService')
+jest.mock('@/app/api/services/BackupService')
 
-describe('CronService.postIfNeeded', () => {
+describe('CronService.pruneIfNeeded', () => {
+  const mockPrunePosts = jest.fn()
+  beforeEach(() => {
+    jest.clearAllMocks()
+    ;(BackupService.prunePosts as jest.Mock).mockImplementation(mockPrunePosts)
+  })
+
+  it('should not prune if autoPruneFrequencyMinutes is not set', async () => {
+    ;(appDataHelper.getAppData as jest.Mock).mockResolvedValue({
+      settings: { autoPruneFrequencyMinutes: undefined },
+      lastPrune: undefined,
+    })
+    await pruneIfNeeded()
+    expect(mockPrunePosts).not.toHaveBeenCalled()
+  })
+
+  it('should not prune if autoPruneFrequencyMinutes is <= 0', async () => {
+    ;(appDataHelper.getAppData as jest.Mock).mockResolvedValue({
+      settings: { autoPruneFrequencyMinutes: 0 },
+      lastPrune: undefined,
+    })
+    await pruneIfNeeded()
+    expect(mockPrunePosts).not.toHaveBeenCalled()
+  })
+
+  it('should prune if there is no previous prune', async () => {
+    ;(appDataHelper.getAppData as jest.Mock).mockResolvedValue({
+      settings: { autoPruneFrequencyMinutes: 10 },
+      lastPrune: undefined,
+    })
+    await pruneIfNeeded()
+    expect(mockPrunePosts).toHaveBeenCalled()
+  })
+
+  it('should prune if nextPrune is due', async () => {
+    const now = Date.now()
+    ;(appDataHelper.getAppData as jest.Mock).mockResolvedValue({
+      settings: { autoPruneFrequencyMinutes: 10 },
+      lastPrune: new Date(now - 11 * 60 * 1000).toISOString(),
+    })
+    await pruneIfNeeded()
+    expect(mockPrunePosts).toHaveBeenCalled()
+  })
+
+  it('should not prune if nextPrune is not due', async () => {
+    const now = Date.now()
+    ;(appDataHelper.getAppData as jest.Mock).mockResolvedValue({
+      settings: { autoPruneFrequencyMinutes: 10 },
+      lastPrune: new Date(now - 5 * 60 * 1000).toISOString(),
+    })
+    await pruneIfNeeded()
+    expect(mockPrunePosts).not.toHaveBeenCalled()
+  })
+})
+
+describe('CronService.backupIfNeeded', () => {
   const mockRunBackup = jest.fn()
   beforeEach(() => {
     jest.clearAllMocks()

@@ -2,6 +2,7 @@ import { Schedule } from './scheduler'
 
 export interface AppData {
   lastBackup?: string | null
+  lastPrune?: string | null
   postsOnBsky?: number | null
   totalPostsBackedUp?: number | null
   oldestBskyPostDate?: string | null
@@ -14,6 +15,7 @@ export interface Settings {
   bskyPassword?: string
   bskyDisplayName?: string
   backupLocation?: string
+  autoPruneFrequencyMinutes?: number
   pruneAfterMonths?: number
   defaultTimezone?: string
   autoBackupFrequencyMinutes?: number

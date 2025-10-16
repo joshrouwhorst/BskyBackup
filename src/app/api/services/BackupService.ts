@@ -42,7 +42,6 @@ export async function getBackupAsPostDisplayData(): Promise<PostDisplayData[]> {
 
 export async function runBackup() {
   logger.opening('Backup Process')
-  logger.log('Getting appData.')
   const appData = await getAppData()
   const lastBackup = appData?.lastBackup ? new Date(appData.lastBackup) : null
   const minimumNextBackup =
@@ -154,7 +153,16 @@ export async function runBackup() {
 
 export async function prunePosts(): Promise<void> {
   logger.opening('Prune Process')
-  const settings = await getSettings()
+  const appData = await getAppData()
+
+  const settings = appData.settings || (await getSettings())
+
+  if (!settings) {
+    logger.log('No settings found, cannot proceed with pruning.')
+    logger.closing('Prune Process')
+    throw new Error('Settings are required for pruning')
+  }
+
   if (!settings.pruneAfterMonths || settings.pruneAfterMonths < 1) {
     logger.log(
       'Pruning is disabled (pruneAfterMonths is not set or less than 1). Exiting prune process.'
@@ -163,31 +171,13 @@ export async function prunePosts(): Promise<void> {
     return
   }
 
-  if (settings.pruneAfterMonths < 3) {
-    logger.log(
-      `Pruning period is set to ${settings.pruneAfterMonths} months, which is less than the minimum of 3 months. Adjusting to 3 months.`
-    )
-    settings.pruneAfterMonths = 3
-  }
-
   const cutoffDate = new Date()
   cutoffDate.setMonth(cutoffDate.getMonth() - settings.pruneAfterMonths)
+
   if (isNaN(cutoffDate.getTime())) {
     logger.log('Invalid cutoff date calculated.')
     logger.closing('Prune Process')
     throw new Error('Cutoff date is required')
-  }
-
-  // Do not allow deleting data newer than 3 months
-  const threeMonthsAgo = new Date()
-  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
-
-  if (cutoffDate > threeMonthsAgo) {
-    logger.log(
-      `Cutoff date ${formatDate(cutoffDate)} is more recent than 3 months ago.`
-    )
-    logger.closing('Prune Process')
-    throw new Error(`Cutoff date cannot be more recent than 3 months ago`)
   }
 
   logger.log(`Running backup before pruning.`)
@@ -198,6 +188,13 @@ export async function prunePosts(): Promise<void> {
 
   logger.log(`Prune process complete.`)
   const currentPosts = await getPosts()
+  appData.lastPrune = new Date().toISOString()
+
+  try {
+    await saveAppData(appData)
+  } catch (error) {
+    logger.error('Error saving appData:', error)
+  }
 
   logger.log(`There are now ${currentPosts.length} total posts in on Bluesky.`)
   logger.closing('Prune Process')

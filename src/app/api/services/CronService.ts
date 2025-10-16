@@ -7,7 +7,7 @@ import {
 } from '../services/SchedulePostService'
 import { cron } from '@/app/api-helpers/cron'
 import { getAppData } from '@/app/api-helpers/appData'
-import { runBackup } from './BackupService'
+import { runBackup, prunePosts } from './BackupService'
 
 const CRON_MINUTES = 5
 const TASK_ID = `task-cron`
@@ -51,6 +51,40 @@ async function cronJob() {
     },
     CRON_MINUTES * 60 * 1000
   )
+}
+
+export async function pruneIfNeeded() {
+  const appData = await getAppData()
+  const settings = appData.settings
+  if (
+    !settings?.autoPruneFrequencyMinutes ||
+    settings.autoPruneFrequencyMinutes <= 0
+  ) {
+    return // Auto prune not enabled
+  }
+
+  const now = new Date()
+  const lastPrune = appData?.lastPrune ? new Date(appData.lastPrune) : null
+
+  if (!lastPrune) {
+    logger.log('No previous prune found, running prune now.')
+    await prunePosts()
+    return
+  }
+
+  const nextPrune = new Date(
+    lastPrune.getTime() + settings.autoPruneFrequencyMinutes * 60 * 1000
+  )
+
+  if (nextPrune <= now) {
+    logger.log(
+      `Last prune was on ${lastPrune.toISOString()}, running prune now.`
+    )
+
+    await prunePosts()
+  } else {
+    logger.log(`Next prune scheduled for ${nextPrune.toISOString()}, skipping.`)
+  }
 }
 
 export async function backupIfNeeded() {
