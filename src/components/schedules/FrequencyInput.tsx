@@ -214,11 +214,11 @@ export default function FrequencyInput({
         {interval.unit === 'weeks' && (
           <div>
             <Label>Days of the Week</Label>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="grid grid-cols-4 gap-2 mt-2 w-full">
               {WEEKDAYS.map((day) => (
                 <label
                   key={day}
-                  className="flex items-center space-x-1 text-sm"
+                  className="flex items-center space-x-1 text-md"
                 >
                   <input
                     type="checkbox"

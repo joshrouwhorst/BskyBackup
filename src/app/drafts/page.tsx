@@ -4,16 +4,17 @@ import { Callout } from '@/components/ui/callout'
 import { LinkButton } from '@/components/ui/forms'
 import DraftsProvider from '@/providers/DraftsProvider'
 import { Plus } from 'lucide-react'
+import TwoColumn from '@/components/ui/TwoColumn'
 
 export default async function Drafts() {
   return (
     <DraftsProvider>
-      <div className="flex flex-col-reverse md:flex-row justify-center gap-4">
-        <main className="*:w-full md:w-1/2">
+      <TwoColumn reverseStack>
+        <TwoColumn.Main>
           <DraftListFilters />
           <DraftPostList />
-        </main>
-        <aside className="*:w-full md:w-1/2">
+        </TwoColumn.Main>
+        <TwoColumn.Side>
           <h1 className="text-2xl font-bold mb-4">Draft List</h1>
           <div className="mt-2">
             <LinkButton
@@ -43,8 +44,8 @@ export default async function Drafts() {
               </p>
             </Callout>
           </div>
-        </aside>
-      </div>
+        </TwoColumn.Side>
+      </TwoColumn>
     </DraftsProvider>
   )
 }

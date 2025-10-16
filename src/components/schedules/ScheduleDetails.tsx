@@ -9,10 +9,12 @@ export default function ScheduleDetails({
   schedule,
   onEdit,
   onDelete,
+  onBack,
 }: {
   schedule: Schedule
   onEdit: (schedule: Schedule) => void
   onDelete: (id: string) => void
+  onBack: () => void
 }) {
   const { deleteSchedule, triggerSchedule, getScheduleLookups } =
     useScheduleContext()
@@ -44,7 +46,7 @@ export default function ScheduleDetails({
   }, [schedule.id, getScheduleLookups])
 
   return (
-    <>
+    <div className="p-6">
       <div className="flex flex-row justify-between gap-4">
         <div>
           <div className="flex flex-col gap-4">
@@ -131,6 +133,9 @@ export default function ScheduleDetails({
           </div>
         </div>
         <div className="flex flex-col gap-2">
+          <Button onClick={() => onBack()} color="primary" variant="outline">
+            Back
+          </Button>
           <Button
             onClick={() => onEdit(schedule)}
             color="primary"
@@ -181,6 +186,6 @@ export default function ScheduleDetails({
       ) : (
         <div>No upcoming posts.</div>
       )}
-    </>
+    </div>
   )
 }
