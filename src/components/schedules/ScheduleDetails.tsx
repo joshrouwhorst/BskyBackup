@@ -4,13 +4,7 @@ import { Button, Label, LinkButton } from '../ui/forms'
 import { displayTime, formatFullDateTime } from '@/helpers/utils'
 import { useEffect, useState } from 'react'
 import Post from '../Post'
-import {
-  ArrowLeftIcon,
-  PencilIcon,
-  TrashIcon,
-  ShareIcon,
-  Pen,
-} from 'lucide-react'
+import { ArrowLeftIcon, PencilIcon, TrashIcon, ShareIcon } from 'lucide-react'
 
 export default function ScheduleDetails({
   schedule,
