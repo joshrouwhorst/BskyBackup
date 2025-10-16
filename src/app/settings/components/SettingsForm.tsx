@@ -49,7 +49,7 @@ export default function SettingsForm() {
       onSubmit={handleSubmit}
       className="space-y-6 bg-color-gray-200 dark:bg-gray-900 p-6 rounded-lg"
     >
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SettingsField
           label="Bluesky Display Name"
           name="bskyDisplayName"

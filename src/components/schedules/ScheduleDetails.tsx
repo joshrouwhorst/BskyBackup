@@ -4,6 +4,13 @@ import { Button, Label, LinkButton } from '../ui/forms'
 import { displayTime, formatFullDateTime } from '@/helpers/utils'
 import { useEffect, useState } from 'react'
 import Post from '../Post'
+import {
+  ArrowLeftIcon,
+  PencilIcon,
+  TrashIcon,
+  ShareIcon,
+  Pen,
+} from 'lucide-react'
 
 export default function ScheduleDetails({
   schedule,
@@ -133,22 +140,26 @@ export default function ScheduleDetails({
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <Button onClick={() => onBack()} color="primary" variant="outline">
-            Back
+          <Button
+            onClick={() => onBack()}
+            color="secondary"
+            variant="secondary"
+          >
+            <ArrowLeftIcon className="w-4 h-4 mr-1" /> Back
           </Button>
           <Button
             onClick={() => onEdit(schedule)}
             color="primary"
             variant="primary"
           >
-            Edit Schedule
+            <PencilIcon className="w-4 h-4 mr-1" /> Edit Schedule
           </Button>
           <Button
             onClick={() => schedule.id && handleDelete(schedule.id)}
             color="danger"
             variant="primary"
           >
-            Delete Schedule
+            <TrashIcon className="w-4 h-4 mr-1" /> Delete Schedule
           </Button>
           {lookups?.nextPost && (
             <Button
@@ -156,7 +167,7 @@ export default function ScheduleDetails({
               variant="primary"
               color="tertiary"
             >
-              Post Now
+              <ShareIcon className="w-4 h-4 mr-1" /> Post Now
             </Button>
           )}
           {schedule.group && (
@@ -171,20 +182,20 @@ export default function ScheduleDetails({
         </div>
       </div>
       {lookups && lookups.nextPostDates.length > 0 ? (
-        <div>
+        <div className="mt-4">
           <Label>Next Post Date</Label>
           <div>{formatFullDateTime(lookups.nextPostDates[0])}</div>
         </div>
       ) : (
-        <div>No next post date available.</div>
+        <div className="mt-4 font-bold">No next post date available.</div>
       )}
       {lookups?.nextPost ? (
-        <div>
+        <div className="mt-4">
           <Label>Next Post</Label>
           <Post draftPost={lookups.nextPost} variant="compact" />
         </div>
       ) : (
-        <div>No upcoming posts.</div>
+        <div className="mt-4 font-bold">No upcoming posts.</div>
       )}
     </div>
   )
