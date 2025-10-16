@@ -16,6 +16,10 @@ export default function SchedulesPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState<Partial<Schedule>>({})
 
+  const handleCancel = () => {
+    setIsEditing(false)
+  }
+
   const handleEdit = (schedule: Schedule) => {
     setSelectedSchedule(schedule)
     setEditForm(schedule)
@@ -42,9 +46,9 @@ export default function SchedulesPage() {
     <AppDataProvider>
       <DraftProvider>
         <ScheduleProvider>
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Schedule List */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow max-w-xl mx-auto">
+            {/* Schedule List */}
+            {!selectedSchedule && !isEditing && (
               <ErrorBoundary>
                 <ScheduleList
                   onEdit={handleEdit}
@@ -54,49 +58,31 @@ export default function SchedulesPage() {
                   setSelectedSchedule={setSelectedSchedule}
                 />
               </ErrorBoundary>
+            )}
 
-              {/* Edit Panel */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                    {isEditing
-                      ? selectedSchedule
-                        ? 'Edit Schedule'
-                        : 'Create Schedule'
-                      : 'Schedule Details'}
-                  </h2>
-                </div>
-                <div className="p-6">
-                  {selectedSchedule || isEditing ? (
-                    <div className="space-y-4">
-                      {isEditing ? (
-                        <ErrorBoundary>
-                          <ScheduleEditForm
-                            schedule={selectedSchedule}
-                            editForm={editForm}
-                            setEditForm={setEditForm}
-                            onSave={handleSave}
-                            setIsEditing={setIsEditing}
-                          />
-                        </ErrorBoundary>
-                      ) : (
-                        <ErrorBoundary>
-                          <ScheduleDetails
-                            schedule={selectedSchedule!}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                          />
-                        </ErrorBoundary>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">
-                      Select a schedule to view details
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
+            {selectedSchedule && !isEditing && (
+              <ErrorBoundary>
+                <ScheduleDetails
+                  schedule={selectedSchedule!}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onBack={() => setSelectedSchedule(null)}
+                />
+              </ErrorBoundary>
+            )}
+
+            {/* Edit Panel */}
+            {isEditing && (
+              <ErrorBoundary>
+                <ScheduleEditForm
+                  schedule={selectedSchedule}
+                  editForm={editForm}
+                  setEditForm={setEditForm}
+                  onSave={handleSave}
+                  onCancel={handleCancel}
+                />
+              </ErrorBoundary>
+            )}
           </div>
         </ScheduleProvider>
       </DraftProvider>

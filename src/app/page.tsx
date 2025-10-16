@@ -5,17 +5,18 @@ import BskyBackupProvider from '@/providers/BskyBackupProvider'
 import DraftProvider from '@/providers/DraftsProvider'
 import Link from '@/components/ui/link'
 import { Callout } from '@/components/ui/callout'
+import TwoColumn from '@/components/ui/TwoColumn'
 
 export default async function Home() {
   return (
     <DraftProvider>
       <BskyBackupProvider>
-        <div className="flex flex-col-reverse md:flex-row justify-center gap-4">
-          <main className="w-full md:w-1/2">
+        <TwoColumn reverseStack stackPoint="md">
+          <TwoColumn.Main>
             <BackupToolBar />
             <BackupPostList />
-          </main>
-          <aside className="w-full md:w-1/2">
+          </TwoColumn.Main>
+          <TwoColumn.Side>
             <h1 className="text-2xl font-bold mb-4">Backup</h1>
             <p className="mb-4">
               This tool helps you back up your posts from Bluesky to your local
@@ -36,8 +37,8 @@ export default async function Home() {
               </p>
             </Callout>
             <Stats />
-          </aside>
-        </div>
+          </TwoColumn.Side>
+        </TwoColumn>
       </BskyBackupProvider>
     </DraftProvider>
   )

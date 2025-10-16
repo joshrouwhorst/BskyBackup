@@ -1,30 +1,29 @@
-import React from "react";
-import { Schedule, CreateScheduleRequest } from "@/types/scheduler";
-import { useScheduleContext } from "@/providers/ScheduleProvider";
-import FrequencyInput from "./FrequencyInput";
-import { Input, Label, Checkbox, Button } from "../ui/forms";
-import TimezoneSelect from "./TimezoneSelect";
-import { GroupSelect } from "../GroupSelect";
+import React from 'react'
+import { Schedule, CreateScheduleRequest } from '@/types/scheduler'
+import { useScheduleContext } from '@/providers/ScheduleProvider'
+import FrequencyInput from './FrequencyInput'
+import { Input, Label, Checkbox, Button } from '../ui/forms'
+import { GroupSelect } from '../GroupSelect'
 
 export default function ScheduleEditForm({
   schedule,
   editForm,
   setEditForm,
   onSave,
-  setIsEditing,
+  onCancel,
 }: {
-  schedule: Schedule | null;
-  editForm: Partial<Schedule>;
-  setEditForm: React.Dispatch<React.SetStateAction<Partial<Schedule>>>;
-  onSave: () => void;
-  setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
+  schedule: Schedule | null
+  editForm: Partial<Schedule>
+  setEditForm: React.Dispatch<React.SetStateAction<Partial<Schedule>>>
+  onSave: () => void
+  onCancel: React.Dispatch<React.SetStateAction<boolean>>
 }) {
-  const { createSchedule, updateSchedule } = useScheduleContext();
+  const { createSchedule, updateSchedule } = useScheduleContext()
 
   const handleSave = async () => {
     if (!editForm.name || !editForm.frequency) {
-      alert("Name and Frequency are required");
-      return;
+      alert('Name and Frequency are required')
+      return
     }
 
     if (schedule && editForm.id) {
@@ -35,31 +34,31 @@ export default function ScheduleEditForm({
         isActive: editForm.isActive || false,
         frequency: editForm.frequency,
         platforms: editForm.platforms || [],
-        group: editForm.group || "default",
-      };
-      await updateSchedule(updatedSchedule);
+        group: editForm.group || 'default',
+      }
+      await updateSchedule(updatedSchedule)
     } else {
       // Create new schedule
       const newSchedule: CreateScheduleRequest = {
-        name: editForm.name || "",
+        name: editForm.name || '',
         isActive: editForm.isActive || false,
         frequency: editForm.frequency,
         platforms: editForm.platforms || [],
-        group: editForm.group || "default",
-      };
-      await createSchedule(newSchedule);
+        group: editForm.group || 'default',
+      }
+      await createSchedule(newSchedule)
     }
-    await onSave();
-  };
+    await onSave()
+  }
   return (
-    <>
+    <div className="p-6">
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1">
           <Label htmlFor="name">Name</Label>
           <Input
             type="text"
             id="name"
-            value={editForm.name || ""}
+            value={editForm.name || ''}
             onChange={(e) =>
               setEditForm((prev) => ({
                 ...prev,
@@ -78,19 +77,19 @@ export default function ScheduleEditForm({
               setEditForm((prev) => ({
                 ...prev,
                 group,
-              }));
+              }))
             }}
           />
         </div>
       </div>
-      <div>
+      <div className="my-4">
         <FrequencyInput
           value={editForm.frequency}
           onChange={(frequency) => {
             setEditForm((prev) => ({
               ...prev,
               frequency,
-            }));
+            }))
           }}
         />
       </div>
@@ -116,8 +115,8 @@ export default function ScheduleEditForm({
         </Button>
         <Button
           onClick={() => {
-            setIsEditing(false);
-            setEditForm({});
+            onCancel(false)
+            setEditForm({})
           }}
           color="secondary"
           variant="primary"
@@ -125,6 +124,6 @@ export default function ScheduleEditForm({
           Cancel
         </Button>
       </div>
-    </>
-  );
+    </div>
+  )
 }
