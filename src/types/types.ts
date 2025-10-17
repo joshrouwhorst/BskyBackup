@@ -1,4 +1,4 @@
-import { Schedule } from './scheduler'
+import type { Schedule } from './scheduler'
 
 export interface AppData {
   lastBackup?: string | null
@@ -30,7 +30,12 @@ export interface PostMedia {
 }
 
 export interface PostDisplayData {
-  video: any
+  video?: {
+    url: string
+    width: number
+    height: number
+    size: number
+  }
   text: string
   author?: {
     displayName?: string

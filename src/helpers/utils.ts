@@ -1,7 +1,8 @@
-import { PostDisplayData } from '@/components/Post'
+/** biome-ignore-all lint/style/noNonNullAssertion: Easier to set up this way */
+import type { PostDisplayData } from '@/components/Post'
 import { BACKUP_MEDIA_ENDPOINT } from '@/config/frontend'
-import { DraftPost } from '@/types/drafts'
-import { PostData } from '@/types/bsky'
+import type { DraftPost } from '@/types/drafts'
+import type { PostData } from '@/types/bsky'
 
 export function formatDate(date: Date | string): string {
   if (typeof date === 'string') {
@@ -71,6 +72,8 @@ export function getDisplayDataFromPostData(
     size: 0,
   }
 
+  const imageList: PostDisplayData['images'] = []
+
   const record = postData.post.record as {
     embed?: {
       $type: string
@@ -87,6 +90,26 @@ export function getDisplayDataFromPostData(
         size: number
       }
     }
+  }
+
+  if (
+    postData.post.embed?.$type === 'app.bsky.embed.images#view' &&
+    postData.post.embed.images
+  ) {
+    postData.post.embed.images.forEach(
+      (img: {
+        local?: string
+        fullsize?: string
+        aspectRatio: { width: number; height: number }
+      }) => {
+        imageList.push({
+          url: img.local || img.fullsize || '',
+          width: img.aspectRatio.width,
+          height: img.aspectRatio.height,
+          size: 0, // Size not provided in embed data
+        })
+      }
+    )
   }
 
   if (record?.embed && record.embed.$type === 'app.bsky.embed.video') {
@@ -107,14 +130,7 @@ export function getDisplayDataFromPostData(
     likeCount: postData.post.likeCount,
     replyCount: postData.post.replyCount,
     repostCount: postData.post.repostCount,
-    images: postData.post.embed?.images
-      ? postData.post.embed.images.map((img: any) => ({
-          url: img.local || img.fullsize,
-          width: img.aspectRatio.width,
-          height: img.aspectRatio.height,
-          size: 0, // Size not provided in embed data
-        }))
-      : undefined,
+    images: imageList.length === 0 ? undefined : imageList,
     video: videoObj,
     isRepost: !!postData.reason,
     parent: postData.reply?.parent

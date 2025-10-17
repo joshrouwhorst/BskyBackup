@@ -9,7 +9,7 @@ import {
   useEffect,
 } from 'react'
 import type { CreateDraftInput, DraftPost } from '@/types/drafts'
-import { useDrafts, DraftFilters } from '@/hooks/useDrafts'
+import { useDrafts, type DraftFilters } from '@/hooks/useDrafts'
 import { wait } from '@/helpers/utils'
 
 interface DraftsContextType {

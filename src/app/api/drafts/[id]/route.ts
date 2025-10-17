@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import type { DraftPost } from '@/types/drafts'
 import {
   deleteDraftPost,

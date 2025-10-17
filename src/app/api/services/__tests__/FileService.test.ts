@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { listFiles, writeFile } from '../FileService'
+import { listFiles } from '../FileService'
 
 const testDir = path.join(__dirname, 'test-files')
 const nestedDir = path.join(testDir, 'nested')

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { Button, Label, Select } from './forms'
-import { Check, Plus, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 
 type TimeSelectorProps = {
   value?: string[] // array of "HH:mm"

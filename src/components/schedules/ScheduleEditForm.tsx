@@ -1,5 +1,5 @@
-import React from 'react'
-import { Schedule, CreateScheduleRequest } from '@/types/scheduler'
+import type React from 'react'
+import type { Schedule, CreateScheduleRequest } from '@/types/scheduler'
 import { useScheduleContext } from '@/providers/ScheduleProvider'
 import FrequencyInput from './FrequencyInput'
 import { Input, Label, Checkbox, Button } from '../ui/forms'

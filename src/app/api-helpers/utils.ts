@@ -36,28 +36,45 @@ export async function downloadFile({
   filePath: string
   overwrite?: boolean
 }): Promise<boolean> {
-  try {
-    // Ensure the directory exists
-    const dir = path.dirname(filePath)
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
-    }
+  const MAX_RETRIES = 3
+  let attempt = 1
+  let err = null
 
-    // Only download if file doesn't exist
-    if (!overwrite && !fs.existsSync(filePath)) {
-      const response = await fetch(url)
-      if (response.ok) {
-        const arrayBuffer = await response.arrayBuffer()
-        const buffer = Buffer.from(arrayBuffer)
-        fs.writeFileSync(filePath, buffer)
-        return true
+  while (attempt <= MAX_RETRIES) {
+    try {
+      // Ensure the directory exists
+      const dir = path.dirname(filePath)
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true })
       }
+
+      // Only download if file doesn't exist
+      if (!overwrite && !fs.existsSync(filePath)) {
+        const response = await fetch(url)
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer()
+          const buffer = Buffer.from(arrayBuffer)
+          fs.writeFileSync(filePath, buffer)
+          return true
+        }
+      }
+      return false
+    } catch (error) {
+      console.error(`Error downloading file from ${url}:`, error)
+      err = error
+      if (attempt < MAX_RETRIES) {
+        console.log(`Retrying download. Attempt ${attempt + 1}/${MAX_RETRIES}.`)
+      }
+      attempt++
     }
-    return false
-  } catch (error) {
-    console.error(`Error downloading file from ${url}:`, error)
-    return false
   }
+
+  if (err) {
+    console.error(`Max retries reached. Last error:`, err)
+    throw err
+  }
+
+  return false
 }
 
 export function safeName(name: string) {

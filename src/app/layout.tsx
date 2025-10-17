@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 
-// @ts-ignore
+declare module '*.css'
+
 import './globals.css'
 import HeaderNav from '@/components/HeaderNav'
 import SettingsProvider from '@/providers/SettingsProvider'

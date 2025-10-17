@@ -1,4 +1,5 @@
-import { Schedule, ScheduleLookups } from '@/types/scheduler'
+/** biome-ignore-all lint/style/noNonNullAssertion: needed for schedule.id, only going to get called if it exists */
+import type { Schedule, ScheduleLookups } from '@/types/scheduler'
 import { useScheduleContext } from '@/providers/ScheduleProvider'
 import { Button, Label, LinkButton } from '../ui/forms'
 import { displayTime, formatFullDateTime } from '@/helpers/utils'

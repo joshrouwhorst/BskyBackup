@@ -1,14 +1,14 @@
-import { FeedViewPost } from '@atproto/api/dist/client/types/app/bsky/feed/defs'
-import {
+/** biome-ignore-all lint/suspicious/noExplicitAny: Eventually I'll update it */
+import type { FeedViewPost } from '@atproto/api/dist/client/types/app/bsky/feed/defs'
+import type {
   Embed,
-  EmbedImageView,
   EmbedView,
   PostData,
   PostRecord,
   PostView,
   ReplyData,
 } from '@/types/bsky'
-import { getMediaName, getMediaPath, getMediaType } from './backupFiles'
+import { getMediaName, getMediaApiUrl, getMediaType } from './backupFiles'
 
 export function transformFeedViewPostToPostData(
   feedPost: FeedViewPost
@@ -106,7 +106,7 @@ function transformPostView(post: FeedViewPost['post']): PostView {
             images:
               (post.embed as EmbedView).images?.map((image, index) => ({
                 fullsize: image.fullsize,
-                local: getMediaPath(
+                local: getMediaApiUrl(
                   getMediaName(post, getMediaType(image.fullsize), index),
                   post.indexedAt.split('T')[0].split('-')[0],
                   getMediaType(image.fullsize)
@@ -127,7 +127,7 @@ function transformPostView(post: FeedViewPost['post']): PostView {
             images:
               (post.embed as EmbedView).images?.map((image, index) => ({
                 fullsize: image.fullsize,
-                local: getMediaPath(
+                local: getMediaApiUrl(
                   getMediaName(post, getMediaType(image.fullsize), index),
                   post.indexedAt.split('T')[0].split('-')[0],
                   getMediaType(image.fullsize)

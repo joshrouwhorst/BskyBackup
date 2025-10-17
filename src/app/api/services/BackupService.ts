@@ -3,8 +3,8 @@ import {
   openBackup,
   saveBackup,
 } from '@/app/api-helpers/backupFiles'
-import { getPosts, deletePosts, logout } from '@/app/api-helpers/bluesky'
-import { FeedViewPost, PostData } from '@/types/bsky'
+import { getPosts, deletePosts } from '@/app/api-helpers/bluesky'
+import type { FeedViewPost, PostData } from '@/types/bsky'
 import { transformFeedViewPostToPostData } from '@/app/api-helpers/transformFeedViewPostToPostData'
 import { MINIMUM_MINUTES_BETWEEN_BACKUPS } from '@/config/main'
 import Logger from '@/app/api-helpers/logger'
@@ -13,7 +13,7 @@ import { getAppData, saveAppData } from '../../api-helpers/appData'
 import { getSettings } from './SettingsService'
 import { getCache, setCache } from './CacheService'
 import { getDisplayDataFromPostData } from '@/helpers/utils'
-import { PostDisplayData } from '@/components/Post'
+import type { PostDisplayData } from '@/components/Post'
 
 const logger = new Logger('BackupServ')
 const CACHE_ID = 'backupPosts'
@@ -50,7 +50,7 @@ export async function runBackup() {
   // Make sure we respect minimum time between backups
   if (
     lastBackup &&
-    !isNaN(lastBackup.getTime()) &&
+    !Number.isNaN(lastBackup.getTime()) &&
     lastBackup.getTime() > minimumNextBackup
   ) {
     logger.log(
@@ -174,7 +174,7 @@ export async function prunePosts(): Promise<void> {
   const cutoffDate = new Date()
   cutoffDate.setMonth(cutoffDate.getMonth() - settings.pruneAfterMonths)
 
-  if (isNaN(cutoffDate.getTime())) {
+  if (Number.isNaN(cutoffDate.getTime())) {
     logger.log('Invalid cutoff date calculated.')
     logger.closing('Prune Process')
     throw new Error('Cutoff date is required')

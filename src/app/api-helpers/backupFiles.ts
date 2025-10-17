@@ -1,13 +1,15 @@
 import path from 'path'
-import { FeedViewPost } from '@/types/bsky'
+import type { FeedViewPost } from '@/types/bsky'
 import { saveBlobToFile } from './bluesky'
 import { saveJsonToFile, readJsonFromFile, downloadFile } from './utils'
 import { getPaths } from '@/config/main'
 import Logger from './logger'
 import { checkIfExists } from '../api/services/FileService'
-import { AppBskyEmbedImages, AppBskyEmbedVideo } from '@atproto/api'
+import type { AppBskyEmbedVideo } from '@atproto/api'
+import { Governor } from './governor'
 
 const logger = new Logger('BackupFile')
+const governor = new Governor(500)
 
 export async function openBackup(): Promise<FeedViewPost[]> {
   // Ensure backup directory exists
@@ -50,16 +52,16 @@ export async function backupMediaFiles(
       const imageUrl = image.fullsize
       // Extract file extension from the URL after @ symbol, or default to .jpg
       const mediaType = getMediaType(imageUrl)
-      const mediaFilename = getMediaName(post, mediaType, i)
       const postDate = new Date(post.indexedAt)
       const year = postDate.getFullYear().toString()
       const mediaLocation = await getMediaLocation(
-        mediaFilename,
+        getMediaName(post, mediaType, i),
         year,
         mediaType
       )
 
       try {
+        await governor.wait()
         const write = await downloadFile({
           url: imageUrl,
           filePath: mediaLocation,
@@ -108,6 +110,15 @@ export function getMediaType(imageUrl: string): string {
   return imageUrl.substring(atIndex + 1)
 }
 
+export function getMediaExtension(imageUrl: string): string {
+  const mediaType = getMediaType(imageUrl)
+  const dotIndex = mediaType.lastIndexOf('.')
+  if (dotIndex !== -1) {
+    return mediaType.substring(dotIndex + 1)
+  }
+  return mediaType
+}
+
 export async function getMediaLocation(
   mediaName: string,
   year: string,
@@ -117,7 +128,7 @@ export async function getMediaLocation(
   return path.join(backupMediaPath, year, mediaType, mediaName)
 }
 
-export function getMediaPath(
+export function getMediaApiUrl(
   mediaName: string,
   year: string,
   mediaType: string
@@ -126,6 +137,18 @@ export function getMediaPath(
 }
 
 export function getMediaName(
+  post: FeedViewPost['post'],
+  extension: string,
+  index: number
+): string {
+  // Extract file extension from the URL after @ symbol, or default to .jpg
+  const mediaExtension = extension ? `.${extension}` : '.jpg'
+  const postId = post.cid
+  const mediaFilename = `${postId}_${index}${mediaExtension}`
+  return mediaFilename
+}
+
+export function getMediaNameOld(
   post: FeedViewPost['post'],
   mediaType: string,
   index: number

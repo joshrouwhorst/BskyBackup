@@ -1,10 +1,12 @@
-![Screenshot of BskyBackup](https://github.com/joshrouwhorst/BskyBackup/blob/main/public/screenshot.png?raw=true)
-
 # BskyBackup
 
 **Local backup, drafts & scheduling for Bluesky**
 
-A Next.js application for viewing and managing your [Bluesky](https://bsky.app) social media backup data, create draft posts, and schedule them to be published, all **local** and **private**.
+A Next.js application for viewing and managing your [Bluesky](https://bsky.app)
+social media backup data, create draft posts, and schedule them to be published,
+all **local** and **private**.
+
+![Screenshot of BskyBackup](https://github.com/joshrouwhorst/BskyBackup/blob/main/public/screenshot.png?raw=true)
 
 ## Project Overview
 
@@ -16,12 +18,16 @@ A Next.js application for viewing and managing your [Bluesky](https://bsky.app) 
 
 **Scheduling**
 
-- Create drafts of posts and group them for scheduling (data all stored on local file system)
+- Create drafts of posts and group them for scheduling (data all stored on local
+  file system)
 - Create schedules to publish from the draft post groups
-  - This allows you to create a group of "Mundaine Monday" posts and schedule them to post every week on a Monday.
+  - This allows you to create a group of "Mundaine Monday" posts and schedule
+    them to post every week on a Monday.
 - Sort upcoming drafts so they post in the order you want
 
-This app reads your Bluesky backup files and displays them in a clean, browseable interface. You can create schedules and have posts automatically sent (assuming you are continuously running this application).
+This app reads your Bluesky backup files and displays them in a clean,
+browseable interface. You can create schedules and have posts automatically
+sent (assuming you are continuously running this application).
 
 ## Quick Start
 
@@ -31,15 +37,21 @@ Make sure your `.env` file in the root of the project has this variable:
 APP_DATA_ENCRYPTION_KEY='your value here'
 ```
 
-APP_DATA_ENCRYPTION_KEY is an encryption key for encoding settings including social media credentials for the app. For maximum security it should be 32 characters long.
+APP_DATA_ENCRYPTION_KEY is an encryption key for encoding settings including
+social media credentials for the app. For maximum security it should be 32
+characters long.
 
-You can also set a specific default data location for the project. This is useful for local development if you have multiple accounts you're testing with. You can have a different directory for each one. Set this default directory in your `.env` file. If it does not exist, it should be created automatically.
+You can also set a specific default data location for the project. This is
+useful for local development if you have multiple accounts you're testing with.
+You can have a different directory for each one. Set this default directory in
+your `.env` file. If it does not exist, it should be created automatically.
 
 ```txt
 DEFAULT_DATA_LOCATION="/Users/me/BskyBackup/data"
 ```
 
-Also, if you want to make sure you don't accidentally post or delete to the live account, you can set this in your `.env` file.
+Also, if you want to make sure you don't accidentally post or delete to the live
+account, you can set this in your `.env` file.
 
 ```txt
 PREVENT_POSTING="true"
@@ -59,15 +71,21 @@ npm run dev
 
 Open [https://localhost:3000](https://localhost:3000) in your browser.
 
-You should be redirected to [https://localhost:3000/settings](https://localhost:3000/settings) until you input required information for setup such as your Bluesky credentials, which is encrypted on your filesystem.
+You should be redirected to
+[https://localhost:3000/settings](https://localhost:3000/settings) until you
+input required information for setup such as your Bluesky credentials, which is
+encrypted on your filesystem.
 
 ### Bluesky Credentials
 
-I recommend setting up an app password specifically for this. On the Bluesky app you can go to Settings -> Privacy & Security -> App passwords to generate one. There is no need to enable direct messages access at this time.
+I recommend setting up an app password specifically for this. On the Bluesky app
+you can go to Settings -> Privacy & Security -> App passwords to generate one.
+There is no need to enable direct messages access at this time.
 
-# Unit Testing
+## Unit Testing
 
-This project does not include a formal automated test suite, but you can run unit tests manually using Jest. To run the tests:
+This project does not include a formal automated test suite, but you can run
+unit tests manually using Jest. To run the tests:
 
 Make sure you have all dependencies installed:
 
@@ -81,18 +99,29 @@ Run the tests with:
 npm run test
 ```
 
-Test files are located alongside source files, typically in `__tests__` directories (e.g., `src/app/api/helpers/__tests__/`).
+Test files are located alongside source files, typically in `__tests__`
+directories (e.g., `src/app/api/helpers/__tests__/`).
 
-If you add new features, consider adding or updating test files to cover your changes. For more information on Jest configuration, see `jest.config.ts`.
+If you add new features, consider adding or updating test files to cover your
+changes. For more information on Jest configuration, see `jest.config.ts`.
 
 ## Docker
 
 [Docker Hub Repository](https://hub.docker.com/r/joshrouwhorst/bsky-backup)
 
-Make sure to map the directory you want your backup and draft data to live in to `/app/data` when creating your container.
+Make sure to map the directory you want your backup and draft data to live in
+to `/app/data` when creating your container.
+
+ARM:
 
 ```shell
-docker buildx build --platform linux/amd64,linux/arm64 --build-arg TARGETARCH=x64 --build-arg TARGETARCH=arm64 -t joshrouwhorst/bsky-backup:latest --push .
+docker buildx build --platform linux/arm64 --load -t local/bsky-backup:latest .
+```
+
+AMD:
+
+```shell
+docker buildx build --platform linux/amd64 --load -t local/bsky-backup:latest .
 ```
 
 ## Important File Locations
@@ -169,7 +198,7 @@ const { posts, isLoading, filters } = useBskyBackupContext()
 
 ### File Structure
 
-```
+```txt
 src/
 ├── app/
 │   ├── api/                 # API routes

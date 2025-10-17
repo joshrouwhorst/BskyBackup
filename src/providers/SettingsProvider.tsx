@@ -1,14 +1,14 @@
 'use client'
 
-import React, {
+import {
   createContext,
   useContext,
   useEffect,
   useState,
-  ReactNode,
+  type ReactNode,
   useCallback,
 } from 'react'
-import { Settings } from '@/types/types'
+import type { Settings } from '@/types/types'
 import { useSettings } from '@/hooks/useSettings'
 
 interface SettingsContextType {

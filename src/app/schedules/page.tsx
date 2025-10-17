@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Schedule } from '@/types/scheduler'
+import type { Schedule } from '@/types/scheduler'
 import AppDataProvider from '@/providers/AppDataProvider'
 import ScheduleList from '@/components/schedules/ScheduleList'
 import ScheduleDetails from '@/components/schedules/ScheduleDetails'
@@ -32,7 +32,7 @@ export default function SchedulesPage() {
     setEditForm({})
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async () => {
     setSelectedSchedule(null)
   }
 
@@ -63,7 +63,7 @@ export default function SchedulesPage() {
             {selectedSchedule && !isEditing && (
               <ErrorBoundary>
                 <ScheduleDetails
-                  schedule={selectedSchedule!}
+                  schedule={selectedSchedule}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onBack={() => setSelectedSchedule(null)}

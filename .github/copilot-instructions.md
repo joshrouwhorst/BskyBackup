@@ -29,8 +29,8 @@
 
 ## Developer Workflows
 
-- **Preferred Package Manager:** Bun (install from https://bun.sh/)
-- **Start Dev Server:** `bun dev`
+- **Preferred Package Manager:** NPM (install from https://npmjs.com/)
+- **Start Dev Server:** `npm run dev`
 - **Environment:** Configure `.env` with Bluesky credentials and backup location
 - **Debugging:**
   - Check API route logs for file/image issues

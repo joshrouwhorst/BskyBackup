@@ -1,6 +1,6 @@
 import { AtpAgent, RichText } from '@atproto/api'
-import { FeedViewPost } from '@/types/bsky'
-import { DraftPost } from '@/types/drafts'
+import type { FeedViewPost } from '@/types/bsky'
+import type { DraftPost } from '@/types/drafts'
 import fs from 'fs/promises'
 import { Governor } from './governor'
 import Logger from './logger'
@@ -101,7 +101,7 @@ export async function getPosts(
     useCache &&
     postCache &&
     cacheDate &&
-    new Date().getTime() - cacheDate.getTime() < CACHE_DURATION_MS
+    Date.now() - cacheDate.getTime() < CACHE_DURATION_MS
   ) {
     logger.log('Using cached posts.')
     return postCache
@@ -484,7 +484,7 @@ export async function saveBlobToFile(
           did,
         })
         success = response?.success || false
-      } catch (error) {
+      } catch {
         success = false
       }
     } while (!success && attempt < MAX_RETRIES)

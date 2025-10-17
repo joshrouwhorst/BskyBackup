@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { ensureCronIsRunning } from '../services/CronService'
 import Logger from '../../api-helpers/logger'
+import migrateMedia from '@/app/api-helpers/migrateMedia'
 
 const logger = new Logger('UtilRoute')
 
@@ -19,6 +20,11 @@ export async function POST(request: Request) {
       logger.log('Shutdown signaled via API.')
       // Implement shutdown logic if needed
       return NextResponse.json({ message: 'Shutdown not implemented' })
+
+    case 'migrate':
+      logger.log('Migration requested via API.')
+      await migrateMedia()
+      return NextResponse.json({ message: 'Migration ran' })
     default:
       logger.error('Invalid action for POST /api/util:', action)
       return NextResponse.json(

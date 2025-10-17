@@ -1,7 +1,6 @@
 'use client'
 
-import React from 'react'
-import { Schedule } from '@/types/scheduler'
+import type { Schedule } from '@/types/scheduler'
 import ScheduleListItem from './ScheduleView'
 import { useScheduleContext } from '@/providers/ScheduleProvider'
 

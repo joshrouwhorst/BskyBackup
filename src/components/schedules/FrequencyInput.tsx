@@ -1,7 +1,7 @@
-/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
-/** biome-ignore-all lint/style/noNonNullAssertion: <explanation> */
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: see code */
+/** biome-ignore-all lint/style/noNonNullAssertion: see code */
 import { useState, useEffect, useCallback } from 'react'
-import { ScheduleFrequency } from '@/types/scheduler'
+import type { ScheduleFrequency } from '@/types/scheduler'
 import { Input, Label, Select } from '../ui/forms'
 import TimezoneSelect from './TimezoneSelect'
 import DaySelector from '../ui/DaySelector'

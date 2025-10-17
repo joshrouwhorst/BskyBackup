@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-import type { NextFetchEvent } from 'next/server'
+import { NextResponse } from 'next/server'
+import type { NextRequest, NextFetchEvent } from 'next/server'
 
 /**
  * Middleware to automatically logout from Bluesky after API calls

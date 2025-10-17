@@ -1,13 +1,14 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import type React from 'react'
+import { useState, useEffect } from 'react'
 import { useSettingsContext } from '@/providers/SettingsProvider'
-import { Settings } from '@/types/types'
-import { Button, Input, Checkbox, Label, Select } from '@/components/ui/forms'
-import Toast, { ToastProps } from '@/components/Toast'
+import type { Settings } from '@/types/types'
+import { Button, Input, Checkbox, Label } from '@/components/ui/forms'
+import Toast, { type ToastProps } from '@/components/Toast'
 import TimezoneSelect from '@/components/schedules/TimezoneSelect'
 
 export default function SettingsForm() {
-  const { settings, update, isLoading, error, refresh } = useSettingsContext()
+  const { settings, update, isLoading, error } = useSettingsContext()
   const [formState, setFormState] = useState<Partial<Settings>>({})
   const [toastMessage, setToastMessage] = useState<ToastProps | null>(null)
 

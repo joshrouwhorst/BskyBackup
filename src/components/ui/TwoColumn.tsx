@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: Need it for columns */
 import clsx from 'clsx'
+import React from 'react'
 import { cloneElement } from 'react'
 
 interface TwoColumnProps {
@@ -27,12 +28,10 @@ export default function TwoColumn({
       if (
         child &&
         typeof child === 'object' &&
-        'type' in child &&
-        ((child as any).type === Main ||
-          (child as any).type === Side ||
-          (child as any).type === Column)
+        React.isValidElement(child) &&
+        (child.type === Main || child.type === Side || child.type === Column)
       ) {
-        const clone = cloneElement(child, {
+        const clone = cloneElement(child as React.ReactElement<ColumnProps>, {
           stackPoint,
           key: `two-column-child-${index}`,
         })

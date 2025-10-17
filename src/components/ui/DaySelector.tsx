@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Button } from './forms'
 
 type DaySelectorProps = {
@@ -58,7 +58,7 @@ export default function DaySelector({
     }
   }, [selectedSet])
 
-  const toggleDay = (day: number, additive = false) => {
+  const toggleDay = (day: number) => {
     setSelectedSet((prev) => {
       const next = new Set(prev)
       if (next.has(day)) next.delete(day)

@@ -1,6 +1,5 @@
 'use client'
 
-import React from 'react'
 import type { PostData } from '@/types/bsky'
 import type { DraftPost } from '@/types/drafts'
 import type { PostDisplayData } from '@/types/types'

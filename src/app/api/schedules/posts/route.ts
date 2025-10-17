@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { publishDraftPost } from '../../services/DraftPostService'
 import { withBskyLogoutAndErrorHandlingForRequest } from '../../../api-helpers/apiWrapper'
 import Logger from '@/app/api-helpers/logger'

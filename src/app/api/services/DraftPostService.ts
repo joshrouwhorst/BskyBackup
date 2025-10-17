@@ -16,7 +16,7 @@ import type {
   DraftMediaFileInput,
 } from '@/types/drafts'
 import { addPost as addPostToBsky } from '@/app/api-helpers/bluesky'
-import { SocialPlatform } from '@/types/scheduler'
+import type { SocialPlatform } from '@/types/scheduler'
 import Logger from '../../api-helpers/logger'
 import { setCache, getCache } from '../services/CacheService'
 import { ensureDir, removeDir, safeName } from '../../api-helpers/utils'
@@ -396,7 +396,7 @@ export async function updateDraftPost(
       // Remove text file if text is empty
       try {
         await deleteFileOrDirectory(path.join(post.dir, TEXT_FILENAME))
-      } catch (err) {
+      } catch {
         // File might not exist, that's okay
       }
     }
@@ -494,7 +494,8 @@ export async function getGroupOrder(group: string): Promise<string[]> {
       .sort((a, b) => (a.meta.priority < b.meta.priority ? 1 : -1))
       .map((p) => p.meta.directoryName)
     return order
-  } catch (err) {
+  } catch {
+    // No order, just return empty array
     return []
   }
 }
@@ -543,7 +544,7 @@ async function readPostText(dir: string): Promise<string> {
   try {
     const data = await readText(p)
     return data || ''
-  } catch (err) {
+  } catch {
     return '' // No text file means no text
   }
 }
@@ -637,7 +638,7 @@ async function getImageDimensions(
       height: metadata.height || 0,
       size: stats.size || 0,
     }
-  } catch (error) {
+  } catch {
     // Fallback dimensions if Jimp fails
     return { width: 0, height: 0, size: 0 }
   }
@@ -655,7 +656,7 @@ async function getVideoDimensions(
       height: 0,
       size: stats.size,
     }
-  } catch (error) {
+  } catch {
     // Fallback if file access fails
     return { width: 0, height: 0, size: 0 }
   }
@@ -680,7 +681,7 @@ async function listGroups(): Promise<string[]> {
         const fileExists = await checkIfExists(metaPath)
         // If we can access meta.json, this is a post directory, not a group
         if (fileExists) continue // skip to next entry
-      } catch (err) {
+      } catch {
         // No meta.json here, might be a group directory
       }
 

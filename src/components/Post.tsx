@@ -1,10 +1,9 @@
-/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: see code */
 'use client'
 
 import React from 'react'
-import { RichText } from '@atproto/api'
-import { PostData, PostRecord, ReplyData } from '@/types/bsky'
-import { DraftPost } from '@/types/drafts'
+import type { PostData } from '@/types/bsky'
+import type { DraftPost } from '@/types/drafts'
 import {
   Heart,
   MessageCircle,
@@ -18,7 +17,7 @@ import {
   CloudUpload,
   FolderPen,
 } from 'lucide-react'
-import { PostDisplayData } from '@/types/types'
+import type { PostDisplayData } from '@/types/types'
 import PostMediaCarousel from './PostMediaCarousel'
 import { Button, LinkButton } from './ui/forms'
 import { useDraftContext } from '@/providers/DraftsProvider'

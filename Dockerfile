@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
-FROM node:24 AS deps
+FROM node:24-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-FROM node:24 AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 COPY . .
 ARG TARGETARCH
@@ -22,7 +22,7 @@ RUN npm rebuild sharp
 RUN npm run build || (npm install --os=${TARGETOS} --cpu=${TARGETARCH} lightningcss && npm run build)
     
 
-FROM node:24 AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
