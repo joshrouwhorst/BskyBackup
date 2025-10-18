@@ -5,7 +5,7 @@ import { saveJsonToFile, readJsonFromFile, downloadFile } from './utils'
 import { getPaths } from '@/config/main'
 import Logger from './logger'
 import { checkIfExists } from '../api/services/FileService'
-import type { AppBskyEmbedVideo } from '@atproto/api'
+import type { AppBskyEmbedImages, AppBskyEmbedVideo } from '@atproto/api'
 import { Governor } from './governor'
 
 const logger = new Logger('BackupFile')
@@ -43,7 +43,7 @@ export async function backupMediaFiles(
 
   if (post.embed && post.embed.$type === 'app.bsky.embed.images#view') {
     let _fileWriteCount = 0
-    const embed = post.embed as any
+    const embed = post.embed as AppBskyEmbedImages.View
     if (!embed.images || embed.images.length === 0) {
       return 0
     }

@@ -2,7 +2,7 @@ import {
   getScheduleLookups,
   publishNextPost,
 } from '../../../services/SchedulePostService'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import Logger from '@/app/api-helpers/logger'
 const logger = new Logger('SchPostRoute')
 import { withBskyLogoutWithId } from '@/app/api-helpers/apiWrapper'
@@ -12,7 +12,7 @@ export const GET = withBskyLogoutWithId(async (id, request) => {
     const searchParams = new URL(request.url).searchParams
     const dateCountParam = searchParams.get('dateCount')
     const dateCount = dateCountParam ? parseInt(dateCountParam, 10) : 5
-    if (isNaN(dateCount) || dateCount <= 0) {
+    if (Number.isNaN(dateCount) || dateCount <= 0) {
       return NextResponse.json(
         { error: 'dateCount must be a positive integer' },
         { status: 400 }
@@ -27,7 +27,8 @@ export const GET = withBskyLogoutWithId(async (id, request) => {
       )
     }
 
-    const lookups = await getScheduleLookups(id, dateCount)
+    const now = new Date()
+    const lookups = await getScheduleLookups(now, id, dateCount)
     if (!lookups) {
       logger.error('No scheduled lookups found')
       return NextResponse.json(

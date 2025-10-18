@@ -1,4 +1,4 @@
-import {
+import type {
   ScheduleFrequency,
   Schedule,
   CreateScheduleRequest,
@@ -60,7 +60,33 @@ describe('getNextTriggerTime', () => {
     }
     const lastRun = new Date('2025-09-23T10:00:00Z')
     const next = getNextTriggerTime(lastRun, freq)
-    expect(next.getUTCHours()).toBe(8)
+    expect(next.toISOString()).toBe('2025-09-24T08:00:00.000Z')
+  })
+
+  it('should calculate the time later today if time has not been passed', () => {
+    const freq: ScheduleFrequency = {
+      interval: { every: 1, unit: 'days' },
+      timesOfDay: ['08:00'],
+      timeZone: 'UTC',
+      daysOfMonth: [],
+      daysOfWeek: [],
+    }
+    const now = new Date('2025-09-23T06:00:00Z')
+    const next = getNextTriggerTime(now, freq)
+    expect(next.toISOString()).toBe('2025-09-23T08:00:00.000Z')
+  })
+
+  it('should calculate the time to tomorrow if time has passed today', () => {
+    const freq: ScheduleFrequency = {
+      interval: { every: 1, unit: 'days' },
+      timesOfDay: ['08:00'],
+      timeZone: 'UTC',
+      daysOfMonth: [],
+      daysOfWeek: [],
+    }
+    const now = new Date('2025-09-23T08:01:00Z')
+    const next = getNextTriggerTime(now, freq)
+    expect(next.toISOString()).toBe('2025-09-24T08:00:00.000Z')
   })
 })
 

@@ -171,11 +171,11 @@ export default function Post({
                 <Folder className="w-3 h-3" /> {displayData.group}
               </span>
             )}
-            <span className="text-gray-400 text-xs ml-auto">
-              {displayData.indexedAt
-                ? new Date(displayData.indexedAt).toLocaleDateString()
-                : ''}
-            </span>
+            {displayData.indexedAt && (
+              <span className="text-gray-400 text-xs ml-auto">
+                {new Date(displayData.indexedAt).toLocaleDateString()}
+              </span>
+            )}
           </div>
           <div className="text-sm text-gray-900 dark:text-gray-100 mt-1 line-clamp-2 break-words">
             {displayData.text.length > 120
@@ -217,141 +217,154 @@ export default function Post({
     )
   }
 
+  function fullSizedView({ displayData }: { displayData: PostDisplayData }) {
+    const videoUrl =
+      displayData.video?.url && displayData.video.url !== ''
+        ? displayData.video.url
+        : null
+
+    return (
+      <div className="p-4 border border-gray-300 rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 shadow-md text-black dark:text-white">
+        <div className="flex flex-row items-center justify-between mb-2">
+          {/* Name and handle */}
+          <div className="flex flex-col md:flex-row md:items-center md:gap-2">
+            <span className="font-semibold">
+              {displayData.author?.displayName || displayData.author?.handle}
+            </span>
+            <span className="text-gray-500 text-sm">
+              @{displayData.author?.handle}
+            </span>
+            {displayData.parent && (
+              <span className="text-blue-500 text-sm">
+                <Reply className="w-4 h-4" /> Reply
+              </span>
+            )}
+            {displayData.isRepost && (
+              <span className="text-green-500 text-sm">
+                <Repeat2 className="w-4 h-4" /> Repost
+              </span>
+            )}
+          </div>
+
+          {/* Buttons */}
+          <div className="flex-1 flex justify-end gap-2">
+            {displayData.draftId ? (
+              <Button
+                variant="icon"
+                color="tertiary"
+                onClick={async () => {
+                  if (
+                    displayData.draftId &&
+                    confirm('Are you sure you want to publish this draft?')
+                  ) {
+                    await publishDraft(displayData.draftId)
+                    await refresh()
+                  }
+                }}
+                title="Publish post"
+              >
+                <CloudUpload className="w-4 h-4" />
+              </Button>
+            ) : null}
+            {displayData.draftId ? (
+              <Button
+                variant="icon"
+                color="secondary"
+                onClick={() => handleDuplicateDraft(displayData)}
+                title="Duplicate post"
+              >
+                <CopyPlus className="w-4 h-4" />
+              </Button>
+            ) : null}
+
+            {displayData.draftId ? (
+              <LinkButton
+                variant="icon"
+                color="primary"
+                href={getEditLink(displayData.draftId)}
+                title="Edit post"
+              >
+                <Edit className="w-4 h-4" />
+              </LinkButton>
+            ) : null}
+
+            {displayData.draftId ? (
+              <Button
+                variant="icon"
+                color="danger"
+                onClick={() => handleDeleteDraft(displayData)}
+                title="Delete post"
+              >
+                <Trash className="w-4 h-4" />
+              </Button>
+            ) : null}
+
+            <Button
+              variant="icon"
+              color="secondary"
+              onClick={copyToClipboard}
+              title="Copy JSON to clipboard"
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Timestamp */}
+          <span className="text-gray-500 text-sm ml-1">
+            {new Date(displayData.indexedAt).toLocaleDateString()}
+          </span>
+        </div>
+        <ReplyParents parent={displayData.parent} root={displayData.root} />
+        <div className="mb-2">{text}</div>
+        <PostMediaCarousel media={displayData.images || []} />
+        <PostVideoPlayer videoUrl={videoUrl || undefined} />
+        {/* Engagement metrics */}
+        <div className="flex flex-row mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+          <div className="flex flex-1 gap-4">
+            <span className="text-gray-500 text-sm flex items-center gap-1">
+              <Heart className="w-4 h-4" color="red" />{' '}
+              {displayData.likeCount || 0}
+            </span>
+            <span className="text-gray-500 text-sm flex items-center gap-1">
+              <MessageCircle className="w-4 h-4" color="teal" />{' '}
+              {displayData.replyCount || 0}
+            </span>
+            <span className="text-gray-500 text-sm flex items-center gap-1">
+              <Repeat2 className="w-4 h-4" color="green" />{' '}
+              {displayData.repostCount || 0}
+            </span>
+          </div>
+          {displayData.slug && (
+            <div
+              className="flex items-center gap-1 text-sm text-gray-500"
+              title="Post slug"
+            >
+              <FolderPen className="w-4 h-4 text-blue-500" /> {displayData.slug}
+            </div>
+          )}
+          <div className="flex flex-1 justify-end">
+            {displayData.group && (
+              <LinkButton
+                href={`/groups/${displayData.group}`}
+                variant="icon"
+                className="flex items-center gap-1 text-sm text-gray-500 mr-4"
+                title={`Posted in group ${displayData.group}`}
+              >
+                <Folder className="w-4 h-4 text-blue-500" />
+                <span>{displayData.group}</span>
+              </LinkButton>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (variant === 'compact') {
     return compactPostView({ displayData: item })
   }
 
-  const videoUrl =
-    item.video?.url && item.video.url !== '' ? item.video.url : null
-
-  return (
-    <div className="p-4 border border-gray-300 rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 shadow-md text-black dark:text-white">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold">
-            {item.author?.displayName || item.author?.handle}
-          </span>
-          <span className="text-gray-500 text-sm">@{item.author?.handle}</span>
-          {item.parent && (
-            <span className="text-blue-500 text-sm">
-              <Reply className="w-4 h-4" /> Reply
-            </span>
-          )}
-          {item.isRepost && (
-            <span className="text-green-500 text-sm">
-              <Repeat2 className="w-4 h-4" /> Repost
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {item.draftId ? (
-            <Button
-              variant="icon"
-              color="tertiary"
-              onClick={async () => {
-                if (
-                  item.draftId &&
-                  confirm('Are you sure you want to publish this draft?')
-                ) {
-                  await publishDraft(item.draftId)
-                  await refresh()
-                }
-              }}
-              title="Publish post"
-            >
-              <CloudUpload className="w-4 h-4" />
-            </Button>
-          ) : null}
-          {item.draftId ? (
-            <Button
-              variant="icon"
-              color="secondary"
-              onClick={() => handleDuplicateDraft(item)}
-              title="Duplicate post"
-            >
-              <CopyPlus className="w-4 h-4" />
-            </Button>
-          ) : null}
-
-          {item.draftId ? (
-            <LinkButton
-              variant="icon"
-              color="primary"
-              href={getEditLink(item.draftId)}
-              title="Edit post"
-            >
-              <Edit className="w-4 h-4" />
-            </LinkButton>
-          ) : null}
-
-          {item.draftId ? (
-            <Button
-              variant="icon"
-              color="danger"
-              onClick={() => handleDeleteDraft(item)}
-              title="Delete post"
-            >
-              <Trash className="w-4 h-4" />
-            </Button>
-          ) : null}
-
-          <Button
-            variant="icon"
-            color="secondary"
-            onClick={copyToClipboard}
-            title="Copy JSON to clipboard"
-          >
-            <Copy className="w-4 h-4" />
-          </Button>
-
-          <span className="text-gray-500 text-sm">
-            {new Date(item.indexedAt).toLocaleDateString()}
-          </span>
-        </div>
-      </div>
-      <ReplyParents parent={item.parent} root={item.root} />
-      <div className="mb-2">{text}</div>
-      <PostMediaCarousel media={item.images || []} />
-      <PostVideoPlayer videoUrl={videoUrl || undefined} />
-      {/* Engagement metrics */}
-      <div className="flex flex-row mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-        <div className="flex flex-1 gap-4">
-          <span className="text-gray-500 text-sm flex items-center gap-1">
-            <Heart className="w-4 h-4" color="red" /> {item.likeCount || 0}
-          </span>
-          <span className="text-gray-500 text-sm flex items-center gap-1">
-            <MessageCircle className="w-4 h-4" color="teal" />{' '}
-            {item.replyCount || 0}
-          </span>
-          <span className="text-gray-500 text-sm flex items-center gap-1">
-            <Repeat2 className="w-4 h-4" color="green" />{' '}
-            {item.repostCount || 0}
-          </span>
-        </div>
-        {item.slug && (
-          <div
-            className="flex items-center gap-1 text-sm text-gray-500"
-            title="Post slug"
-          >
-            <FolderPen className="w-4 h-4 text-blue-500" /> {item.slug}
-          </div>
-        )}
-        <div className="flex flex-1 justify-end">
-          {item.group && (
-            <LinkButton
-              href={`/groups/${item.group}`}
-              variant="icon"
-              className="flex items-center gap-1 text-sm text-gray-500 mr-4"
-              title={`Posted in group ${item.group}`}
-            >
-              <Folder className="w-4 h-4 text-blue-500" />
-              <span>{item.group}</span>
-            </LinkButton>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+  return fullSizedView({ displayData: item })
 }
 
 interface ReplyParentsProps {

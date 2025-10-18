@@ -165,6 +165,7 @@ export async function getSchedulePosts(
 }
 
 export async function getScheduleLookups(
+  startDate = new Date(),
   scheduleId: string,
   postDates: number = 1
 ): Promise<ScheduleLookups> {
@@ -174,7 +175,7 @@ export async function getScheduleLookups(
   const schedule = schedules.find((s) => s.id === scheduleId)
   if (schedule?.isActive) {
     nextPostDates = getNextTriggerTimes(
-      schedule.lastTriggered ? new Date(schedule.lastTriggered) : null,
+      startDate,
       schedule.frequency,
       postDates
     )
@@ -294,37 +295,38 @@ export async function publishNextPost(scheduleId: string): Promise<void> {
 }
 
 export function getNextTriggerTime(
-  lastRun: Date | null,
+  startDate = new Date(),
   frequency: ScheduleFrequency
 ): Date {
-  if (!lastRun) lastRun = new Date()
+  const now = startDate
   const { interval, timesOfDay, timeZone, daysOfWeek, daysOfMonth } = frequency
   const { every, unit } = interval
 
   const run = getNextDatetime(
-    lastRun,
+    now,
     every,
     unit,
     timesOfDay,
     timeZone,
     daysOfWeek,
-    daysOfMonth
+    daysOfMonth,
+    1
   )
 
-  return run.length > 0 ? run[0] : lastRun
+  return run.length > 0 ? run[0] : now
 }
 
 export function getNextTriggerTimes(
-  lastRun: Date | null,
+  startDate = new Date(),
   frequency: ScheduleFrequency,
   count: number = 1
 ): Date[] {
-  if (!lastRun) lastRun = new Date()
+  const now = startDate
   const { interval, timesOfDay, timeZone, daysOfWeek, daysOfMonth } = frequency
   const { every, unit } = interval
 
   const run = getNextDatetime(
-    lastRun,
+    now,
     every,
     unit,
     timesOfDay,
@@ -334,5 +336,5 @@ export function getNextTriggerTimes(
     count
   )
 
-  return run.length > 0 ? run : [lastRun]
+  return run.length > 0 ? run : [now]
 }

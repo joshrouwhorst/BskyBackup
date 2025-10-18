@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: needed for test */
 import { getNextDatetime } from '@/app/api-helpers/getNextDatetime'
 
 describe('getNextDatetime', () => {

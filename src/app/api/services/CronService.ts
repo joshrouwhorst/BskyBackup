@@ -40,6 +40,7 @@ export async function ensureCronIsRunning() {
 }
 
 async function cronJob() {
+  await pruneIfNeeded()
   await backupIfNeeded()
   await postIfNeeded()
   if (cron.hasTask(TASK_ID)) cron.removeTask(TASK_ID)
