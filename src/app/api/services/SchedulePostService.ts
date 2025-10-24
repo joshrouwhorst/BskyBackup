@@ -6,8 +6,8 @@ import type {
 } from '@/types/scheduler'
 import { getAppData, saveAppData } from '@/app/api-helpers/appData'
 import {
-  getDraftPosts,
   getDraftPostsInGroup,
+  getDraftPostsInSchedule,
   publishDraftPost,
 } from './DraftPostService'
 import type { DraftPost } from '@/types/drafts'
@@ -128,7 +128,8 @@ export async function reorderSchedulePosts(
   newOrder: string[]
 ): Promise<void> {
   logger.log(`Reordering posts for schedule ${scheduleId}.`, { newOrder })
-  const schedule = (await getSchedules()).find((s) => s.id === scheduleId)
+  const schedules = await getSchedules()
+  const schedule = schedules.find((s) => s.id === scheduleId)
   if (!schedule) {
     throw new Error(`Schedule ${scheduleId} not found`)
   }
@@ -147,7 +148,8 @@ export async function reorderSchedulePosts(
     }
   }
 
-  await reorderSchedulePosts(scheduleId, newOrder)
+  schedule.postOrder = newOrder
+  await updateScheduleData({ schedules })
 }
 
 export async function getSchedulePosts(
@@ -158,29 +160,25 @@ export async function getSchedulePosts(
     throw new Error(`Schedule ${scheduleId} not found`)
   }
 
-  const posts = await getDraftPosts()
-  return posts
-    .filter((p) => p.group === schedule.group)
-    .sort((a, b) => a.meta.priority - b.meta.priority)
+  return await getDraftPostsInSchedule(schedule)
 }
 
 export async function getScheduleLookups(
   startDate = new Date(),
-  scheduleId: string,
-  postDates: number = 1
+  scheduleId: string
 ): Promise<ScheduleLookups> {
-  const nextPost = await getNextPost(scheduleId)
+  const nextPosts = await getSchedulePosts(scheduleId)
   let nextPostDates: Date[] = []
   const schedules = await getSchedules()
   const schedule = schedules.find((s) => s.id === scheduleId)
-  if (schedule?.isActive) {
+  if (schedule?.isActive && nextPosts.length > 0) {
     nextPostDates = getNextTriggerTimes(
       startDate,
       schedule.frequency,
-      postDates
+      nextPosts.length
     )
   }
-  return { nextPost, nextPostDates }
+  return { nextPosts, nextPostDates }
 }
 
 export async function getNextPost(

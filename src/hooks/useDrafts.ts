@@ -10,6 +10,7 @@ interface DraftHookContext {
   fetchDrafts: (filters?: DraftFilters) => Promise<DraftPost[]>
   createDraft: (input: CreateDraftInput) => Promise<DraftPost>
   getDraftsInGroup: (group: string) => Promise<DraftPost[]>
+  getDraftsInSchedule: (scheduleId: string) => Promise<DraftPost[]>
   getDraft: (id: string, group?: string) => Promise<DraftPost | null>
   updateDraft: (
     id: string,
@@ -68,6 +69,21 @@ export function useDrafts(): DraftHookContext {
       )
       if (!response.ok) {
         throw new Error('Failed to fetch drafts for group')
+      }
+      const data: DraftPost[] = await response.json()
+      return data
+    } catch (error) {
+      throw error
+    }
+  }, [])
+
+  const getDraftsInSchedule = useCallback(async (scheduleId: string) => {
+    try {
+      const response = await fetch(
+        `/api/drafts?scheduleId=${encodeURIComponent(scheduleId)}`
+      )
+      if (!response.ok) {
+        throw new Error('Failed to fetch drafts for schedule')
       }
       const data: DraftPost[] = await response.json()
       return data
@@ -185,6 +201,7 @@ export function useDrafts(): DraftHookContext {
     fetchDrafts,
     createDraft,
     getDraftsInGroup,
+    getDraftsInSchedule,
     getDraft,
     updateDraft,
     deleteDraft,

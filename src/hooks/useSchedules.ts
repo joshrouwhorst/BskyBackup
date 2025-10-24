@@ -1,5 +1,4 @@
-import { DraftPost } from '@/types/drafts'
-import {
+import type {
   Schedule,
   CreateScheduleRequest,
   ScheduleLookups,
@@ -15,10 +14,7 @@ interface SchedulesHookContext {
   updateSchedule: (input: Schedule) => Promise<Schedule>
   deleteSchedule: (id: string) => Promise<void>
   triggerSchedule: (scheduleId: string) => Promise<void>
-  getScheduleLookups: (
-    scheduleId: string,
-    dateCount: number
-  ) => Promise<ScheduleLookups | null>
+  getScheduleLookups: (scheduleId: string) => Promise<ScheduleLookups | null>
   reorderSchedulePosts: (
     scheduleId: string,
     draftPostIds: string[]
@@ -112,7 +108,7 @@ export function useSchedules(): SchedulesHookContext {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch(`/api/schedules/${scheduleId}/posts`, {
+      const response = await fetch(`/api/schedules/${scheduleId}`, {
         method: 'POST',
       })
       if (!response.ok) {
@@ -128,13 +124,8 @@ export function useSchedules(): SchedulesHookContext {
   }, [])
 
   const getScheduleLookups = useCallback(
-    async (
-      scheduleId: string,
-      dateCount: number = 1
-    ): Promise<ScheduleLookups | null> => {
-      const response = await fetch(
-        `/api/schedules/${scheduleId}/posts?dateCount=${dateCount}`
-      )
+    async (scheduleId: string): Promise<ScheduleLookups | null> => {
+      const response = await fetch(`/api/schedules/${scheduleId}`)
       if (!response.ok) {
         throw new Error('Failed to fetch next post for schedule')
       }
@@ -149,17 +140,25 @@ export function useSchedules(): SchedulesHookContext {
       setLoading(true)
       setError(null)
       try {
-        const response = await fetch(`/api/schedules/${scheduleId}/posts`, {
+        const response = await fetch(`/api/schedules/${scheduleId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ draftPostIds }),
+          body: JSON.stringify({ newOrder: draftPostIds }),
         })
         if (!response.ok) {
           throw new Error('Failed to reorder posts in schedule')
         }
-        // Optionally update local state if needed
+
+        // Update local schedule if needed
+        const schedule = schedules.find((s) => s.id === scheduleId)
+        if (schedule) {
+          schedule.postOrder = draftPostIds
+          setSchedules((prev) =>
+            prev.map((s) => (s.id === schedule.id ? schedule : s))
+          )
+        }
       } catch (error) {
         setError(error instanceof Error ? error : new Error('Unknown error'))
         throw error
@@ -167,7 +166,7 @@ export function useSchedules(): SchedulesHookContext {
         setLoading(false)
       }
     },
-    []
+    [schedules]
   )
 
   const refresh = useCallback(async () => {

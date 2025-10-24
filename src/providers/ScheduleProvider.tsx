@@ -1,7 +1,7 @@
 'use client'
 
-import React, { createContext, useContext, ReactNode } from 'react'
-import {
+import { createContext, useContext, type ReactNode } from 'react'
+import type {
   CreateScheduleRequest,
   Schedule,
   ScheduleLookups,
@@ -16,10 +16,11 @@ interface SchedulesContextType {
   updateSchedule: (input: Schedule) => Promise<Schedule>
   deleteSchedule: (id: string) => Promise<void>
   triggerSchedule: (scheduleId: string) => Promise<void>
-  getScheduleLookups: (
+  getScheduleLookups: (scheduleId: string) => Promise<ScheduleLookups | null>
+  reorderSchedulePosts: (
     scheduleId: string,
-    dateCount: number
-  ) => Promise<ScheduleLookups | null>
+    newOrder: string[]
+  ) => Promise<void>
 }
 
 // Create the context
@@ -41,6 +42,7 @@ export default function ScheduleProvider({ children }: ScheduleProviderProps) {
     deleteSchedule,
     triggerSchedule,
     getScheduleLookups,
+    reorderSchedulePosts,
   } = useSchedules()
 
   const contextValue: SchedulesContextType = {
@@ -52,6 +54,7 @@ export default function ScheduleProvider({ children }: ScheduleProviderProps) {
     deleteSchedule,
     triggerSchedule,
     getScheduleLookups,
+    reorderSchedulePosts,
   }
 
   return (

@@ -1,24 +1,16 @@
 import {
   getScheduleLookups,
   publishNextPost,
-} from '../../../services/SchedulePostService'
+  reorderSchedulePosts,
+} from '../../services/SchedulePostService'
 import { NextResponse } from 'next/server'
 import Logger from '@/app/api-helpers/logger'
 const logger = new Logger('SchPostRoute')
 import { withBskyLogoutWithId } from '@/app/api-helpers/apiWrapper'
 
-export const GET = withBskyLogoutWithId(async (id, request) => {
+// Get schedule lookups
+export const GET = withBskyLogoutWithId(async (id) => {
   try {
-    const searchParams = new URL(request.url).searchParams
-    const dateCountParam = searchParams.get('dateCount')
-    const dateCount = dateCountParam ? parseInt(dateCountParam, 10) : 5
-    if (Number.isNaN(dateCount) || dateCount <= 0) {
-      return NextResponse.json(
-        { error: 'dateCount must be a positive integer' },
-        { status: 400 }
-      )
-    }
-
     if (!id) {
       logger.error('Schedule ID is required')
       return NextResponse.json(
@@ -28,7 +20,7 @@ export const GET = withBskyLogoutWithId(async (id, request) => {
     }
 
     const now = new Date()
-    const lookups = await getScheduleLookups(now, id, dateCount)
+    const lookups = await getScheduleLookups(now, id)
     if (!lookups) {
       logger.error('No scheduled lookups found')
       return NextResponse.json(
@@ -46,6 +38,40 @@ export const GET = withBskyLogoutWithId(async (id, request) => {
   }
 })
 
+// Reorder next posts for schedule
+export const PUT = withBskyLogoutWithId(async (id, request) => {
+  try {
+    const { newOrder } = await request.json()
+    if (!id) {
+      logger.error('Schedule ID is required for updating next posts')
+      return NextResponse.json(
+        { error: 'Schedule ID is required' },
+        { status: 400 }
+      )
+    }
+    if (!Array.isArray(newOrder)) {
+      logger.error('newOrder must be an array')
+      return NextResponse.json(
+        { error: 'newOrder must be an array' },
+        { status: 400 }
+      )
+    }
+
+    await reorderSchedulePosts(id, newOrder)
+
+    return NextResponse.json({
+      message: 'Schedule order updated successfully',
+    })
+  } catch (error) {
+    logger.error('Failed to update schedule order', error)
+    return NextResponse.json(
+      { error: 'Failed to update schedule order' },
+      { status: 500 }
+    )
+  }
+})
+
+// Publish the next post for the schedule
 export const POST = withBskyLogoutWithId(async (id) => {
   try {
     if (!id) {
