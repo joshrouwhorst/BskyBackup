@@ -69,6 +69,10 @@ export default function SettingsProvider({ children }: SettingsProviderProps) {
 
   useEffect(() => {
     const checkOnboarding = async () => {
+      if (!settings) {
+        await refresh()
+      }
+
       if (
         (settings === null || !settings.hasOnboarded) &&
         window.location.pathname !== '/settings'
@@ -79,7 +83,7 @@ export default function SettingsProvider({ children }: SettingsProviderProps) {
       }
     }
     checkOnboarding()
-  }, [settings, settings?.hasOnboarded])
+  }, [settings, settings?.hasOnboarded, refresh])
 
   const contextValue: SettingsContextType = {
     settings,

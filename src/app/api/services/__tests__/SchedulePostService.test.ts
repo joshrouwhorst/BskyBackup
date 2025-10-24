@@ -167,35 +167,6 @@ describe('Schedule CRUD', () => {
   })
 })
 
-describe('getSchedulePosts', () => {
-  it('should return posts for a schedule group', async () => {
-    const schedule: Schedule = {
-      id: 'schedule-1',
-      name: 'Test',
-      frequency: {
-        interval: { every: 1, unit: 'days' },
-        timesOfDay: ['08:00'],
-        timeZone: 'UTC',
-      },
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      platforms: ['bluesky'],
-      group: 'group1',
-    }
-    ;(appDataHelpers.getAppData as jest.Mock).mockResolvedValue({
-      schedules: [schedule],
-    })
-    ;(draftPostService.getDraftPosts as jest.Mock).mockResolvedValue([
-      { group: 'group1', meta: { priority: 2 } },
-      { group: 'group1', meta: { priority: 1 } },
-      { group: 'group2', meta: { priority: 0 } },
-    ])
-    const posts = await getSchedulePosts('schedule-1')
-    expect(posts.length).toBe(2)
-    expect(posts[0].meta.priority).toBe(1)
-  })
-})
-
 describe('publishNextPost', () => {
   it('should publish next post and update schedule', async () => {
     const schedule: Schedule = {

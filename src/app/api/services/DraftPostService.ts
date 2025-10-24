@@ -16,7 +16,7 @@ import type {
   DraftMediaFileInput,
 } from '@/types/drafts'
 import { addPost as addPostToBsky } from '@/app/api-helpers/bluesky'
-import type { SocialPlatform } from '@/types/scheduler'
+import type { Schedule, SocialPlatform } from '@/types/scheduler'
 import Logger from '../../api-helpers/logger'
 import { setCache, getCache } from '../services/CacheService'
 import { ensureDir, removeDir, safeName } from '../../api-helpers/utils'
@@ -58,6 +58,38 @@ export async function getDraftPostsInGroup(
 ): Promise<DraftPost[]> {
   const posts = await getDraftPosts()
   return posts.filter((p) => p.group === group)
+}
+
+export async function getDraftPostsInSchedule(
+  schedule: Schedule
+): Promise<DraftPost[]> {
+  if (!schedule.group) {
+    return []
+  }
+
+  try {
+    let posts = await getDraftPosts()
+    posts = posts.filter((p) => p.group === schedule.group)
+
+    // IDs in the order defined by the schedule
+    // If the post isn't already in here, then they go to end
+    const postOrder = schedule.postOrder || []
+
+    const orderedPosts = posts.sort((a, b) => {
+      if (!postOrder || postOrder.length === 0) return 0
+      const indexA = postOrder.indexOf(a.meta.directoryName)
+      const indexB = postOrder.indexOf(b.meta.directoryName)
+      if (indexA === -1 && indexB === -1) return 0
+      if (indexA === -1) return 1
+      if (indexB === -1) return -1
+      return indexA - indexB
+    })
+    return orderedPosts
+  } catch (err) {
+    logger.error('Error getting draft posts in schedule:', err)
+    // No order, just return empty array
+    return []
+  }
 }
 
 export async function getDraftPosts(): Promise<DraftPost[]> {
@@ -478,25 +510,6 @@ async function sendToSocialPlatform(
       break
     default:
       throw new Error(`Platform ${platform} not supported`)
-  }
-}
-
-export async function getGroupOrder(group: string): Promise<string[]> {
-  try {
-    const posts = await getDraftPostsInGroup(group)
-    posts.sort((a, b) => (a.meta.priority < b.meta.priority ? 1 : -1))
-    for (let i = 0; i < posts.length; i++) {
-      posts[i].meta.priority = i
-      const metaPath = path.join(posts[i].dir, META_FILENAME)
-      await writeFile(metaPath, JSON.stringify(posts[i].meta, null, 2))
-    }
-    const order = posts
-      .sort((a, b) => (a.meta.priority < b.meta.priority ? 1 : -1))
-      .map((p) => p.meta.directoryName)
-    return order
-  } catch {
-    // No order, just return empty array
-    return []
   }
 }
 

@@ -146,7 +146,7 @@ export default function Post({
 
   function compactPostView({ displayData }: { displayData: PostDisplayData }) {
     return (
-      <div className="flex items-start gap-3 py-2 px-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 transition-colors">
+      <div className="flex items-start gap-3 py-2 px-3 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 transition-colors">
         {/* Author avatar placeholder */}
         <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400 text-lg font-bold">
           {displayData.author?.displayName

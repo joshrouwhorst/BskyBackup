@@ -8,6 +8,7 @@ export interface Schedule {
   name: string
   frequency: ScheduleFrequency
   isActive: boolean
+  postOrder?: string[] // Array of DraftPost IDs
   createdAt?: string
   lastTriggered?: string | null
   nextTrigger?: string | null
@@ -39,6 +40,6 @@ export interface CreateScheduleRequest {
 }
 
 export interface ScheduleLookups {
-  nextPost?: DraftPost | null
+  nextPosts: DraftPost[]
   nextPostDates: Date[]
 }

@@ -37,7 +37,7 @@ export default function ScheduleDetails({
 
   useEffect(() => {
     const fetchScheduleLookups = async () => {
-      const next = await getScheduleLookups(schedule.id!, 1)
+      const next = await getScheduleLookups(schedule.id!)
       if (next) {
         setLookups(next)
       } else {
@@ -156,7 +156,7 @@ export default function ScheduleDetails({
           >
             <TrashIcon className="w-4 h-4 mr-1" /> Delete Schedule
           </Button>
-          {lookups?.nextPost && (
+          {lookups?.nextPosts && lookups.nextPosts.length > 0 && (
             <Button
               onClick={() => schedule.id && handleTrigger(schedule.id)}
               variant="primary"
@@ -165,13 +165,13 @@ export default function ScheduleDetails({
               <ShareIcon className="w-4 h-4 mr-1" /> Post Now
             </Button>
           )}
-          {schedule.group && (
+          {schedule.id && (
             <LinkButton
-              href={`/groups/${encodeURIComponent(schedule.group)}`}
+              href={`/schedules/${encodeURIComponent(schedule.id)}`}
               variant="secondary"
               color="primary"
             >
-              Go to Group
+              Order Posts
             </LinkButton>
           )}
         </div>
@@ -184,10 +184,10 @@ export default function ScheduleDetails({
       ) : (
         <div className="mt-4 font-bold">No next post date available.</div>
       )}
-      {lookups?.nextPost ? (
+      {lookups?.nextPosts && lookups.nextPosts.length > 0 ? (
         <div className="mt-4">
           <Label>Next Post</Label>
-          <Post draftPost={lookups.nextPost} variant="compact" />
+          <Post draftPost={lookups.nextPosts[0]} variant="compact" />
         </div>
       ) : (
         <div className="mt-4 font-bold">No upcoming posts.</div>

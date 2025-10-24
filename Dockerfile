@@ -33,4 +33,4 @@ COPY --from=builder /app/package.json ./
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/scripts ./scripts
 EXPOSE 3000
-CMD ["node", "scripts/start.js"]
+CMD ["node", "./start.js"]

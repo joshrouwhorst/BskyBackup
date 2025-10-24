@@ -102,7 +102,7 @@ export default function SettingsForm() {
               <Checkbox
                 name="autoPruneFrequencyMinutes"
                 id="autoPruneFrequencyMinutes"
-                checked={!!formState.autoPruneFrequencyMinutes}
+                checked={formState.autoPruneFrequencyMinutes !== undefined}
                 onChange={(e) =>
                   setFormState((prev) => ({
                     ...prev,
@@ -114,7 +114,7 @@ export default function SettingsForm() {
               />
             </div>
             <div className="flex-1">
-              {formState.autoPruneFrequencyMinutes && (
+              {formState.autoPruneFrequencyMinutes !== undefined && (
                 <div className="mt-2">
                   <Label htmlFor="autoPruneFrequencyMinutesValue">
                     Frequency (minutes)
@@ -123,7 +123,11 @@ export default function SettingsForm() {
                     type="number"
                     name="autoPruneFrequencyMinutesValue"
                     id="autoPruneFrequencyMinutesValue"
-                    value={formState.autoPruneFrequencyMinutes || 60}
+                    value={
+                      formState.autoPruneFrequencyMinutes !== undefined
+                        ? formState.autoPruneFrequencyMinutes
+                        : 60
+                    }
                     onChange={(e) =>
                       setFormState((prev) => ({
                         ...prev,
@@ -144,7 +148,7 @@ export default function SettingsForm() {
               <Checkbox
                 name="autoBackupFrequencyMinutes"
                 id="autoBackupFrequencyMinutes"
-                checked={!!formState.autoBackupFrequencyMinutes}
+                checked={formState.autoBackupFrequencyMinutes !== undefined}
                 onChange={(e) =>
                   setFormState((prev) => ({
                     ...prev,
@@ -156,7 +160,7 @@ export default function SettingsForm() {
               />
             </div>
             <div className="flex-1">
-              {formState.autoBackupFrequencyMinutes && (
+              {formState.autoBackupFrequencyMinutes !== undefined && (
                 <div className="mt-2">
                   <Label htmlFor="autoBackupFrequencyMinutesValue">
                     Frequency (minutes)
@@ -165,7 +169,11 @@ export default function SettingsForm() {
                     type="number"
                     name="autoBackupFrequencyMinutesValue"
                     id="autoBackupFrequencyMinutesValue"
-                    value={formState.autoBackupFrequencyMinutes || 60}
+                    value={
+                      formState.autoBackupFrequencyMinutes !== undefined
+                        ? formState.autoBackupFrequencyMinutes
+                        : 60
+                    }
                     onChange={(e) =>
                       setFormState((prev) => ({
                         ...prev,

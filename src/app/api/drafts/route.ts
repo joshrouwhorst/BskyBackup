@@ -2,40 +2,45 @@ import { NextResponse } from 'next/server'
 
 import {
   getDraftPosts,
-  getDraftPost,
   createDraftPost,
   updateDraftPost,
   getDraftPostsInGroup,
+  getDraftPostsInSchedule,
 } from '@/app/api/services/DraftPostService'
+import { getSchedules } from '@/app/api/services/SchedulePostService'
 import type { CreateDraftInput, DraftPost } from '@/types/drafts'
 import Logger from '@/app/api-helpers/logger'
+import {
+  withBskyLogoutForRequest,
+  withBskyLogoutWithId,
+} from '@/app/api-helpers/apiWrapper'
+import { Schedule } from '@/types/scheduler'
 
 const logger = new Logger('DraftsRoute')
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id?: string }> }
-) {
-  let id = undefined
-
-  if (params) {
-    const resolvedParams = await params
-    id = resolvedParams.id
-  }
-
+export const GET = withBskyLogoutForRequest(async (request) => {
   const { searchParams } = new URL(request.url)
   const group = searchParams.get('group') || undefined
+  const scheduleId = searchParams.get('schedule') || undefined
   const searchTerm = searchParams.get('searchTerm') || undefined
 
   try {
-    if (id) {
-      const post = await getDraftPost(id)
-      return NextResponse.json(post)
-    }
-
     let posts: DraftPost[] = []
     if (group) {
       posts = await getDraftPostsInGroup(group)
+    } else if (scheduleId) {
+      const schedule = (await getSchedules()).find(
+        (s) => s.id === scheduleId
+      ) as Schedule
+
+      if (!schedule) {
+        return NextResponse.json(
+          { error: 'Schedule not found' },
+          { status: 404 }
+        )
+      }
+
+      posts = await getDraftPostsInSchedule(schedule)
     } else {
       posts = await getDraftPosts()
     }
@@ -61,9 +66,9 @@ export async function GET(
       { status: 500 }
     )
   }
-}
+})
 
-export async function POST(request: Request) {
+export const POST = withBskyLogoutForRequest(async (request) => {
   try {
     const input = await request.json()
     if (Array.isArray(input)) {
@@ -84,15 +89,11 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
-}
+})
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id?: string }> }
-) {
+export const PUT = withBskyLogoutWithId(async (id, request) => {
   try {
     const input: CreateDraftInput = await request.json()
-    const { id } = await params
     if (!id) {
       return NextResponse.json(
         { error: 'Post ID is required' },
@@ -109,4 +110,4 @@ export async function PUT(
       { status: 500 }
     )
   }
-}
+})
