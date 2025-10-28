@@ -1,11 +1,12 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: needed for schedule.id, only going to get called if it exists */
-import type { Schedule, ScheduleLookups } from '@/types/scheduler'
-import { useScheduleContext } from '@/providers/ScheduleProvider'
-import { Button, Label, LinkButton } from '../ui/forms'
+
 import { displayTime, formatFullDateTime } from '@/helpers/utils'
+import { useScheduleContext } from '@/providers/ScheduleProvider'
+import type { Schedule, ScheduleLookups } from '@/types/scheduler'
+import { ArrowLeftIcon, PencilIcon, ShareIcon, TrashIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Post from '../Post'
-import { ArrowLeftIcon, PencilIcon, TrashIcon, ShareIcon } from 'lucide-react'
+import { Button, Label, LinkButton } from '../ui/forms'
 
 export default function ScheduleDetails({
   schedule,
@@ -62,6 +63,29 @@ export default function ScheduleDetails({
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Group: {schedule.group ?? 'NONE'}
               </p>
+            </div>
+            <div className="flex flex-row gap-4">
+              <div>
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Start Time
+                </span>
+                <p className="text-gray-900 dark:text-gray-100">
+                  {schedule.startTime
+                    ? formatFullDateTime(new Date(schedule.startTime))
+                    : 'Immediate'}
+                </p>
+              </div>
+
+              <div>
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  End Time
+                </span>
+                <p className="text-gray-900 dark:text-gray-100">
+                  {schedule.endTime
+                    ? formatFullDateTime(new Date(schedule.endTime))
+                    : 'None'}
+                </p>
+              </div>
             </div>
             <div>
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">

@@ -1,9 +1,9 @@
-import type React from 'react'
-import type { Schedule, CreateScheduleRequest } from '@/types/scheduler'
 import { useScheduleContext } from '@/providers/ScheduleProvider'
-import FrequencyInput from './FrequencyInput'
-import { Input, Label, Checkbox, Button } from '../ui/forms'
+import type { CreateScheduleRequest, Schedule } from '@/types/scheduler'
+import type React from 'react'
 import { GroupSelect } from '../GroupSelect'
+import { Button, Checkbox, Input, Label } from '../ui/forms'
+import FrequencyInput from './FrequencyInput'
 
 export default function ScheduleEditForm({
   schedule,
@@ -35,6 +35,9 @@ export default function ScheduleEditForm({
         frequency: editForm.frequency,
         platforms: editForm.platforms || [],
         group: editForm.group || 'default',
+        startTime: editForm.startTime,
+        endTime: editForm.endTime,
+        createdAt: schedule.createdAt,
       }
       await updateSchedule(updatedSchedule)
     } else {
@@ -45,6 +48,8 @@ export default function ScheduleEditForm({
         frequency: editForm.frequency,
         platforms: editForm.platforms || [],
         group: editForm.group || 'default',
+        startTime: editForm.startTime,
+        endTime: editForm.endTime,
       }
       await createSchedule(newSchedule)
     }
@@ -79,6 +84,37 @@ export default function ScheduleEditForm({
                 group,
               }))
             }}
+          />
+        </div>
+      </div>
+      <div className="mt-4 flex flex-row gap-4 *:flex-1">
+        <div>
+          <Label className="mb-2 block">Start Time</Label>
+          <Input
+            type="datetime-local"
+            value={editForm.startTime ? editForm.startTime.slice(0, 16) : ''}
+            onChange={(e) => {
+              console.log(`New value: ${e.target.value}`)
+              setEditForm((prev) => ({
+                ...prev,
+                startTime: e.target.value || undefined,
+              }))
+            }}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+        <div>
+          <Label className="mb-2 block">End Time</Label>
+          <Input
+            type="datetime-local"
+            value={editForm.endTime ? editForm.endTime.slice(0, 16) : ''}
+            onChange={(e) =>
+              setEditForm((prev) => ({
+                ...prev,
+                endTime: e.target.value || undefined,
+              }))
+            }
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
       </div>

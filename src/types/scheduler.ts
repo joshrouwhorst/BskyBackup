@@ -39,6 +39,8 @@ export interface CreateScheduleRequest {
   platforms: SocialPlatform[]
   isActive?: boolean
   group: string
+  startTime?: string
+  endTime?: string
 }
 
 export interface ScheduleLookups {
