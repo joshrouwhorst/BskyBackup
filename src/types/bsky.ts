@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: see code */
 export type { FeedViewPost } from '@atproto/api/dist/client/types/app/bsky/feed/defs'
 
 export interface PostData {
@@ -162,6 +163,51 @@ export interface Viewer {
   repost?: string
 }
 
+// https://atproto.com/specs/label
 export interface Label {
-  // Define label structure as needed
+  /**
+   * label schema version (integer). Current version is always 1.
+   */
+  ver: number
+
+  /**
+   * authority (account) which generated this label (DID format)
+   */
+  src: string
+
+  /**
+   * the content this label applies to (URI format). For a record: at:// URI. For an account: the did.
+   */
+  uri: string
+
+  /**
+   * optional CID for a specific version of the subject uri
+   */
+  cid?: string
+
+  /**
+   * the value of the label (string, <= 128 bytes)
+   */
+  val: string
+
+  /**
+   * if true, this label negates an earlier label with the same src, uri, and val
+   */
+  neg?: boolean
+
+  /**
+   * creation timestamp (datetime format)
+   */
+  cts: string
+
+  /**
+   * optional expiration timestamp (datetime format)
+   */
+  exp?: string
+
+  /**
+   * optional cryptographic signature bytes.
+   * Represented using the Data Model "bytes" encoding in JSON as an object like { $bytes: "<base64>" }.
+   */
+  sig?: { $bytes: string } | string
 }

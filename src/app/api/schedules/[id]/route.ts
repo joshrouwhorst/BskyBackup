@@ -19,8 +19,7 @@ export const GET = withBskyLogoutWithId(async (id) => {
       )
     }
 
-    const now = new Date()
-    const lookups = await getScheduleLookups(now, id)
+    const lookups = await getScheduleLookups(id)
     if (!lookups) {
       logger.error('No scheduled lookups found')
       return NextResponse.json(

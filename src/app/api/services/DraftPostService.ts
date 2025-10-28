@@ -1,33 +1,33 @@
-import fs from 'fs/promises'
-import path from 'path'
-import { Jimp } from 'jimp'
+import { addPost as addPostToBsky } from '@/app/api-helpers/bluesky'
 import {
-  DRAFT_MEDIA_ENDPOINT,
-  SUPPORTED_SOCIAL_PLATFORMS,
   DEFAULT_GROUP,
   DEFAULT_POST_SLUG,
+  DRAFT_MEDIA_ENDPOINT,
   getPaths,
+  SUPPORTED_SOCIAL_PLATFORMS,
 } from '@/config/main'
 import type {
   CreateDraftInput,
-  DraftPost,
-  DraftMeta,
   DraftMedia,
   DraftMediaFileInput,
+  DraftMeta,
+  DraftPost,
 } from '@/types/drafts'
-import { addPost as addPostToBsky } from '@/app/api-helpers/bluesky'
 import type { Schedule, SocialPlatform } from '@/types/scheduler'
+import { Jimp } from 'jimp'
+import fs from 'node:fs/promises'
+import path from 'node:path'
 import Logger from '../../api-helpers/logger'
-import { setCache, getCache } from '../services/CacheService'
 import { ensureDir, removeDir, safeName } from '../../api-helpers/utils'
+import { getCache, setCache } from '../services/CacheService'
 import {
-  listFiles,
   checkIfExists,
-  writeFile,
-  readText,
-  deleteFileOrDirectory,
   copyFileOrDirectory,
+  deleteFileOrDirectory,
+  listFiles,
   moveFileOrDirectory,
+  readText,
+  writeFile,
 } from './FileService'
 
 const META_FILENAME = 'meta.json'
@@ -165,7 +165,7 @@ export async function getDraftPost(
     ? path.join(draftPostsPath, group, id)
     : path.join(draftPostsPath, id)
 
-  const cached = _cache?.find((p) => p.dir === fullPath)
+  const cached = _cache?.find((p) => p.fullPath === fullPath)
   if (!noCache && cached) return cached
 
   const metaExists = await checkIfExists(path.join(fullPath, META_FILENAME))
@@ -189,14 +189,14 @@ export async function getDraftPost(
   const { images, video } = await readMedia(fullPath)
 
   const post = {
-    dir: fullPath,
+    fullPath: fullPath,
     group: group || '',
     meta: { ...meta, text, images: images || [], video: video || null },
   } as DraftPost
 
   if (_cache) {
     // Find and replace or add to cache
-    const index = _cache.findIndex((p) => p.dir === post.dir)
+    const index = _cache.findIndex((p) => p.fullPath === post.fullPath)
     if (index !== -1) {
       _cache[index] = post
     } else {
@@ -290,7 +290,7 @@ export async function createDraftPost(
   )
 
   const post = {
-    dir: postDir,
+    fullPath: postDir,
     meta: { ...meta, text: postText },
     group: input.group,
   } as DraftPost
@@ -306,21 +306,25 @@ export async function deleteDraftPost(id: string): Promise<void> {
   logger.log(`Deleting draft post ${id}.`)
   const post = await getDraftPost(id)
   if (!post) throw new Error('Post not found')
-  await deleteFileOrDirectory(post.dir)
+  await deleteFileOrDirectory(post.fullPath)
 
   if (_cache) {
     _cache = setCache(
       CACHE_ID,
-      _cache.filter((p) => p.dir !== post.dir)
+      _cache.filter((p) => p.fullPath !== post.fullPath)
     )
   }
 }
 
 export async function duplicateDraftPost(id: string): Promise<DraftPost> {
   logger.log(`Duplicating draft post ${id}.`)
-  const createdAt = new Date().toISOString()
   const post = await getDraftPost(id)
-  if (!post) throw new Error('Post not found')
+  if (!post) {
+    logger.log(`Draft post ${id} not found for duplication.`)
+    throw new Error('Post not found')
+  }
+
+  const createdAt = new Date().toISOString()
 
   const {
     directoryName: newDirectoryName,
@@ -332,8 +336,6 @@ export async function duplicateDraftPost(id: string): Promise<DraftPost> {
     slug: post.meta.slug,
     group: post.group,
   })
-
-  await ensureDir(fullPath)
 
   // Copy all files and subdirectories from old dir to new dir, except 'media'
   async function copyRecursive(src: string, dest: string) {
@@ -368,7 +370,7 @@ export async function duplicateDraftPost(id: string): Promise<DraftPost> {
   }
 
   try {
-    await copyRecursive(post.dir, fullPath)
+    await copyRecursive(post.fullPath, fullPath)
   } catch (err) {
     await removeDir(fullPath) // Cleanup
     throw err
@@ -412,22 +414,22 @@ export async function updateDraftPost(
       slug: input.slug,
       group: input.group,
     })
-    await updatePostDirectoryName(post.dir, fullPath)
+    await updatePostDirectoryName(post.fullPath, fullPath)
     //await wait(2000)
     input.slug = slug
     post.meta.slug = slug
-    post.dir = fullPath
+    post.fullPath = fullPath
     post.meta.directoryName = newDirectoryName
   }
 
   // Update text file if text is provided
   if (input.text !== undefined) {
     if (input.text) {
-      await writeText(post.dir, input.text)
+      await writeText(post.fullPath, input.text)
     } else {
       // Remove text file if text is empty
       try {
-        await deleteFileOrDirectory(path.join(post.dir, TEXT_FILENAME))
+        await deleteFileOrDirectory(path.join(post.fullPath, TEXT_FILENAME))
       } catch {
         // File might not exist, that's okay
       }
@@ -441,7 +443,7 @@ export async function updateDraftPost(
     await movePostToGroup(post, input.group || DEFAULT_GROUP)
   }
 
-  const mediaPath = path.join(post.dir, MEDIA_DIRNAME)
+  const mediaPath = path.join(post.fullPath, MEDIA_DIRNAME)
 
   if (input.images) {
     // Delete the media directory and old items
@@ -463,7 +465,7 @@ export async function updateDraftPost(
     await addVideo(input.video, mediaPath)
   }
 
-  await writeMeta(post.dir, post.meta)
+  await writeMeta(post.fullPath, post.meta)
 
   // Make sure we're updating the cache
   return await getDraftPost(post.meta.directoryName, post.group, true)
@@ -477,7 +479,7 @@ export async function readMediaFile(
   post: DraftPost,
   filePath: string
 ): Promise<Buffer> {
-  const p = path.join(post.dir, post.meta.mediaDir, filePath)
+  const p = path.join(post.fullPath, post.meta.mediaDir, filePath)
   return fs.readFile(p)
 }
 
@@ -536,7 +538,7 @@ export async function reorderGroupPosts(
     const post = postMap.get(newOrder[i])
     if (post) {
       post.meta.priority = i
-      const metaPath = path.join(post.dir, META_FILENAME)
+      const metaPath = path.join(post.fullPath, META_FILENAME)
       await writeFile(metaPath, JSON.stringify(post.meta, null, 2))
     }
   }
@@ -571,6 +573,10 @@ async function readMedia(postDir: string): Promise<{
   const mediaRaw = await listFiles(mediaPath)
   const images: DraftMedia[] = []
   let video: DraftMedia | undefined = undefined
+
+  if (!mediaRaw || mediaRaw.length === 0) {
+    return { images: undefined, video: undefined }
+  }
 
   for (const file of mediaRaw) {
     if (file.isDirectory) continue
@@ -721,7 +727,7 @@ async function listGroups(): Promise<string[]> {
   return groups
 }
 
-function generateDirPath({
+export function generateDirPath({
   createdAt,
   root,
   slug,
@@ -803,11 +809,11 @@ async function movePostToGroup(
   const groupDir = path.join(draftPostsPath, newGroup)
   await ensureDir(groupDir)
 
-  const baseName = path.basename(post.dir)
+  const baseName = path.basename(post.fullPath)
   const newDir = path.join(groupDir, baseName)
 
-  await moveFileOrDirectory(post.dir, newDir)
-  post.dir = newDir
+  await moveFileOrDirectory(post.fullPath, newDir)
+  post.fullPath = newDir
   post.group = newGroup
   return post
 }
@@ -819,12 +825,12 @@ async function movePostToPublished(post: DraftPost): Promise<DraftPost> {
   const newDir = path.join(
     publishedPostsPath,
     ...(post.group ? [post.group] : []),
-    path.basename(post.dir)
+    path.basename(post.fullPath)
   )
 
   await ensureDir(newDir)
 
-  await moveFileOrDirectory(post.dir, newDir)
-  post.dir = newDir
+  await moveFileOrDirectory(post.fullPath, newDir)
+  post.fullPath = newDir
   return post
 }

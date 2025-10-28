@@ -7,12 +7,11 @@ import * as appDataHelpers from '@/app/api-helpers/appData'
 import * as draftPostService from '../DraftPostService'
 
 import {
-  getNextTriggerTime,
+  getNextTriggerTimes,
   createSchedule,
   updateSchedule,
   deleteSchedule,
   getSchedules,
-  getSchedulePosts,
   publishNextPost,
 } from '../SchedulePostService'
 
@@ -27,7 +26,7 @@ jest.mock('@/app/api-helpers/appData', () => ({
   saveAppData: jest.fn(),
 }))
 jest.mock('@/app/api/services/DraftPostService', () => ({
-  getDraftPostsInGroup: jest.fn(),
+  getDraftPostsInSchedule: jest.fn(),
   getDraftPosts: jest.fn(),
   publishDraftPost: jest.fn(),
 }))
@@ -49,7 +48,7 @@ jest.mock('@/app/api-helpers/logger', () => {
   }
 })
 
-describe('getNextTriggerTime', () => {
+describe('getNextTriggerTimes', () => {
   it('should calculate next trigger time', () => {
     const freq: ScheduleFrequency = {
       interval: { every: 1, unit: 'days' },
@@ -59,8 +58,8 @@ describe('getNextTriggerTime', () => {
       daysOfWeek: [],
     }
     const lastRun = new Date('2025-09-23T10:00:00Z')
-    const next = getNextTriggerTime(lastRun, freq)
-    expect(next.toISOString()).toBe('2025-09-24T08:00:00.000Z')
+    const next = getNextTriggerTimes(lastRun, freq, 1)
+    expect(next[0].toISOString()).toBe('2025-09-24T08:00:00.000Z')
   })
 
   it('should calculate the time later today if time has not been passed', () => {
@@ -72,7 +71,7 @@ describe('getNextTriggerTime', () => {
       daysOfWeek: [],
     }
     const now = new Date('2025-09-23T06:00:00Z')
-    const next = getNextTriggerTime(now, freq)
+    const next = getNextTriggerTimes(now, freq, 1)[0]
     expect(next.toISOString()).toBe('2025-09-23T08:00:00.000Z')
   })
 
@@ -85,8 +84,23 @@ describe('getNextTriggerTime', () => {
       daysOfWeek: [],
     }
     const now = new Date('2025-09-23T08:01:00Z')
-    const next = getNextTriggerTime(now, freq)
+    const next = getNextTriggerTimes(now, freq, 1)[0]
     expect(next.toISOString()).toBe('2025-09-24T08:00:00.000Z')
+  })
+
+  it('should calculate multiple times', () => {
+    const freq: ScheduleFrequency = {
+      interval: { every: 1, unit: 'days' },
+      timesOfDay: ['08:00'],
+      timeZone: 'UTC',
+      daysOfMonth: [],
+      daysOfWeek: [],
+    }
+    const now = new Date('2025-09-23T08:01:00Z')
+    const nextTimes = getNextTriggerTimes(now, freq, 3)
+    expect(nextTimes[0].toISOString()).toBe('2025-09-24T08:00:00.000Z')
+    expect(nextTimes[1].toISOString()).toBe('2025-09-25T08:00:00.000Z')
+    expect(nextTimes[2].toISOString()).toBe('2025-09-26T08:00:00.000Z')
   })
 })
 
@@ -185,7 +199,7 @@ describe('publishNextPost', () => {
     ;(appDataHelpers.getAppData as jest.Mock).mockResolvedValue({
       schedules: [schedule],
     })
-    ;(draftPostService.getDraftPostsInGroup as jest.Mock).mockResolvedValue([
+    ;(draftPostService.getDraftPostsInSchedule as jest.Mock).mockResolvedValue([
       { meta: { directoryName: 'post1', priority: 1 }, group: 'group1' },
     ])
     ;(draftPostService.publishDraftPost as jest.Mock).mockResolvedValue(
@@ -198,7 +212,7 @@ describe('publishNextPost', () => {
     ])
   })
 
-  it('should publish next post with the highest priority and update schedule', async () => {
+  it('should publish next post according to what getDraftPostsInSchedule returns', async () => {
     const schedule: Schedule = {
       id: 'schedule-1',
       name: 'Test',
@@ -215,12 +229,12 @@ describe('publishNextPost', () => {
     ;(appDataHelpers.getAppData as jest.Mock).mockResolvedValue({
       schedules: [schedule],
     })
-    ;(draftPostService.getDraftPostsInGroup as jest.Mock).mockResolvedValue([
-      { meta: { directoryName: 'post2', priority: 2 }, group: 'group1' },
-      { meta: { directoryName: 'post3', priority: 3 }, group: 'group1' },
-      { meta: { directoryName: 'post1', priority: 1 }, group: 'group1' },
-      { meta: { directoryName: 'post4', priority: 4 }, group: 'group1' },
-      { meta: { directoryName: 'post5', priority: -1 }, group: 'group1' },
+    ;(draftPostService.getDraftPostsInSchedule as jest.Mock).mockResolvedValue([
+      { meta: { directoryName: 'post1' }, group: 'group1' },
+      { meta: { directoryName: 'post2' }, group: 'group1' },
+      { meta: { directoryName: 'post3' }, group: 'group1' },
+      { meta: { directoryName: 'post4' }, group: 'group1' },
+      { meta: { directoryName: 'post5' }, group: 'group1' },
     ])
     ;(draftPostService.publishDraftPost as jest.Mock).mockResolvedValue(
       undefined

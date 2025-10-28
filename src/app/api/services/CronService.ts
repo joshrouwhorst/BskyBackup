@@ -2,8 +2,8 @@ import Logger from '@/app/api-helpers/logger'
 import {
   getSchedules,
   updateSchedule,
-  getNextTriggerTime,
   publishNextPost,
+  getNextTriggerTimes,
 } from '../services/SchedulePostService'
 import { cron } from '@/app/api-helpers/cron'
 import { getAppData } from '@/app/api-helpers/appData'
@@ -103,7 +103,6 @@ export async function backupIfNeeded() {
 
   if (!lastBackup) {
     logger.log('No previous backup found, running backup now.')
-    const { runBackup } = await import('./BackupService')
     await runBackup()
     return
   }
@@ -127,6 +126,19 @@ export async function postIfNeeded() {
   for (const schedule of schedules) {
     if (!schedule.isActive || !schedule.id || !schedule.group) continue
 
+    if (schedule.endTime && new Date(schedule.endTime) <= now) {
+      logger.log(
+        `Schedule ${schedule.id} has passed its end time. Deactivating schedule.`
+      )
+      await updateSchedule(schedule.id, { isActive: false })
+      continue
+    }
+
+    if (schedule.startTime && new Date(schedule.startTime) > now) {
+      // Schedule has not reached its start time. Skip it.
+      continue
+    }
+
     if (!schedule.lastTriggered) {
       logger.log(
         `Schedule ${schedule.id} has never been triggered. Setting lastTriggered to now.`
@@ -135,20 +147,41 @@ export async function postIfNeeded() {
       schedule.lastTriggered = now.toISOString()
     }
 
-    const nextRun = getNextTriggerTime(
+    const nextRuns = getNextTriggerTimes(
       new Date(schedule.lastTriggered),
-      schedule.frequency
+      schedule.frequency,
+      1
     )
 
-    if (nextRun <= now) {
+    const nextRun = nextRuns.length > 0 ? nextRuns[0] : null
+
+    if (!nextRun) {
       logger.log(
-        `Triggering scheduled post for group ${
-          schedule.group
-        } (scheduled for ${nextRun.toISOString()})`
+        `Could not determine next run for schedule ${schedule.id}. Skipping.`
       )
-      await publishNextPost(schedule.id)
-      await updateSchedule(schedule.id, { lastTriggered: now.toISOString() })
+      continue
     }
+
+    // Trigger only if nextRun is not in the future and occurred within the last CRON_MINUTES minutes
+    const windowStart = new Date(now.getTime() - CRON_MINUTES * 60 * 1000)
+
+    if (nextRun > now) {
+      // Scheduled for the future — skip for now
+      continue
+    }
+
+    if (nextRun < windowStart) {
+      // Next run was earlier than our cron window; skip to avoid triggering long-missed runs
+      continue
+    }
+
+    logger.log(
+      `Triggering scheduled post for group ${
+        schedule.group
+      } (scheduled for ${nextRun.toISOString()})`
+    )
+    await publishNextPost(schedule.id)
+    await updateSchedule(schedule.id, { lastTriggered: now.toISOString() })
   }
 }
 

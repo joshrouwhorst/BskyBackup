@@ -28,7 +28,7 @@ export default function TimeSelector({
   value = [],
   onChange,
   className = '',
-  presets = ['07:30', '09:00', '12:00', '17:30'],
+  presets = ['07:30', '09:00', '12:00', '15:30', '17:00', '19:00'],
   maxItems,
 }: TimeSelectorProps) {
   const [times, setTimes] = useState<string[]>(() =>

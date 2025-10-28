@@ -1,12 +1,14 @@
 // Scheduling System Types
 
-import { DraftPost } from './drafts'
+import type { DraftPost } from './drafts'
 
 export interface Schedule {
   id?: string
   cronId?: string
   name: string
   frequency: ScheduleFrequency
+  startTime?: string
+  endTime?: string
   isActive: boolean
   postOrder?: string[] // Array of DraftPost IDs
   createdAt?: string
