@@ -164,13 +164,22 @@ export async function getSchedulePosts(
 }
 
 export async function getScheduleLookups(
-  startDate = new Date(),
-  scheduleId: string
+  scheduleId: string,
+  startDate?: Date
 ): Promise<ScheduleLookups> {
-  const nextPosts = await getSchedulePosts(scheduleId)
-  let nextPostDates: Date[] = []
   const schedules = await getSchedules()
   const schedule = schedules.find((s) => s.id === scheduleId)
+
+  // Use the schedule's start time if no startDate provided
+  if (!startDate && schedule?.startTime) {
+    startDate = new Date(schedule.startTime)
+  } else {
+    // Or use "now" if no startTime is set
+    startDate = startDate || new Date()
+  }
+
+  const nextPosts = await getSchedulePosts(scheduleId)
+  let nextPostDates: Date[] = []
   if (schedule?.isActive && nextPosts.length > 0) {
     nextPostDates = getNextTriggerTimes(
       startDate,
@@ -184,29 +193,8 @@ export async function getScheduleLookups(
 export async function getNextPost(
   scheduleId: string
 ): Promise<DraftPost | null> {
-  const schedules = await getSchedules()
-  const schedule = schedules.find((s) => s.id === scheduleId)
-  if (!schedule) return null
-
-  // Get all scheduled posts for this schedule's group
-  const scheduledPosts = await getDraftPostsInGroup(schedule.group)
-
-  const newPosts = scheduledPosts.filter((p) => p.meta.priority === -1)
-  newPosts.sort((a, b) => {
-    const aDate = new Date(a.meta.createdAt).getTime()
-    const bDate = new Date(b.meta.createdAt).getTime()
-    return aDate - bDate
-  })
-
-  // Assign priority to new posts, adding them to the end of the list
-  newPosts.forEach((p, idx) => {
-    p.meta.priority = scheduledPosts.length - newPosts.length + idx + 1
-  })
-
-  // Sort by DraftPost.priority (lower number = higher priority)
-  scheduledPosts.sort((a, b) => a.meta.priority - b.meta.priority)
-
-  return scheduledPosts[0] || null
+  const lookups = await getScheduleLookups(scheduleId)
+  return lookups.nextPosts.length > 0 ? lookups.nextPosts[0] : null
 }
 
 export async function publishNextPost(scheduleId: string): Promise<void> {
@@ -223,10 +211,13 @@ export async function publishNextPost(scheduleId: string): Promise<void> {
 
   // Update schedule last triggered
   schedule.lastTriggered = new Date().toISOString()
-  schedule.nextTrigger = getNextTriggerTime(
+  const nextTriggers = getNextTriggerTimes(
     new Date(schedule.lastTriggered),
-    schedule.frequency
-  ).toISOString()
+    schedule.frequency,
+    1
+  )
+  schedule.nextTrigger =
+    nextTriggers.length > 0 ? nextTriggers[0].toISOString() : null
 
   const post = await getNextPost(scheduleId)
 
@@ -290,28 +281,6 @@ export async function publishNextPost(scheduleId: string): Promise<void> {
 
   logger.closing('Publish Next Post Process')
   return
-}
-
-export function getNextTriggerTime(
-  startDate = new Date(),
-  frequency: ScheduleFrequency
-): Date {
-  const now = startDate
-  const { interval, timesOfDay, timeZone, daysOfWeek, daysOfMonth } = frequency
-  const { every, unit } = interval
-
-  const run = getNextDatetime(
-    now,
-    every,
-    unit,
-    timesOfDay,
-    timeZone,
-    daysOfWeek,
-    daysOfMonth,
-    1
-  )
-
-  return run.length > 0 ? run[0] : now
 }
 
 export function getNextTriggerTimes(

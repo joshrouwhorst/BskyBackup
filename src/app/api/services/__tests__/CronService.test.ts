@@ -1,6 +1,7 @@
-import { backupIfNeeded, pruneIfNeeded } from '../CronService'
 import * as appDataHelper from '@/app/api-helpers/appData'
+import type { Schedule, ScheduleFrequency } from '@/types/scheduler'
 import * as BackupService from '../BackupService'
+import { backupIfNeeded, postIfNeeded, pruneIfNeeded } from '../CronService'
 
 jest.mock('@/config/main', () => ({
   DEFAULT_GROUP: 'default',
@@ -26,6 +27,155 @@ jest.mock('@/app/api-helpers/logger', () => ({
 }))
 jest.mock('@/app/api-helpers/appData')
 jest.mock('@/app/api/services/BackupService')
+
+jest.mock('@/app/api/services/SchedulePostService', () => ({
+  getSchedules: jest.fn(),
+  updateSchedule: jest.fn(),
+  publishNextPost: jest.fn(),
+  getNextTriggerTimes: jest.fn(),
+}))
+
+describe('CronService.ensureCronIsRunning', () => {
+  const { cron } = require('@/app/api-helpers/cron')
+  beforeEach(() => {
+    jest.clearAllMocks()
+    cron.hasTask = jest.fn().mockReturnValue(false)
+    cron.addTask = jest.fn()
+    cron.removeTask = jest.fn()
+  })
+
+  it('should add a cron job if not already running', async () => {
+    const { ensureCronIsRunning } = require('../CronService')
+    await ensureCronIsRunning()
+    expect(cron.hasTask).toHaveBeenCalled()
+    expect(cron.addTask).toHaveBeenCalled()
+  })
+
+  it('should not add a cron job if already running', async () => {
+    cron.hasTask = jest.fn().mockReturnValue(true)
+    const { ensureCronIsRunning } = require('../CronService')
+    await ensureCronIsRunning()
+    expect(cron.hasTask).toHaveBeenCalled()
+    expect(cron.addTask).not.toHaveBeenCalled()
+  })
+})
+
+describe('CronService.postIfNeeded', () => {
+  const {
+    publishNextPost,
+    getSchedules,
+    getNextTriggerTimes,
+  } = require('../SchedulePostService')
+
+  it('should not post if there are no schedules', async () => {
+    getSchedules.mockResolvedValue([])
+    await postIfNeeded()
+    expect(publishNextPost).not.toHaveBeenCalled()
+  })
+
+  it('should post if a schedule is due', async () => {
+    const now = Date.now()
+    getSchedules.mockResolvedValue([
+      {
+        id: 'schedule-1',
+        group: 'default',
+        isActive: true,
+        frequency: {
+          type: 'interval',
+          interval: { every: 5, unit: 'minutes' },
+        } as ScheduleFrequency,
+        platforms: ['bluesky'],
+      } as Schedule,
+    ])
+    getNextTriggerTimes.mockReturnValue([new Date(now - 1 * 60 * 1000)]) // Next run was 1 minute ago
+
+    await postIfNeeded()
+    expect(publishNextPost).toHaveBeenCalledWith('schedule-1')
+  })
+
+  it('should not post if no schedules are due', async () => {
+    const now = Date.now()
+    getSchedules.mockResolvedValue([
+      {
+        id: 'schedule-1',
+        group: 'default',
+        frequency: {
+          type: 'interval',
+          interval: { every: 5, unit: 'minutes' },
+        } as ScheduleFrequency,
+        platforms: ['bluesky'],
+      } as Schedule,
+    ])
+    ;(
+      require('../SchedulePostService').getNextTriggerTimes as jest.Mock
+    ).mockResolvedValue([[new Date(now + 5 * 60 * 1000)]]) // Next run is in 5 minutes
+
+    await postIfNeeded()
+    expect(publishNextPost).not.toHaveBeenCalled()
+  })
+
+  it('should not post if schedule is inactive', async () => {
+    const now = Date.now()
+    getSchedules.mockResolvedValue([
+      {
+        id: 'schedule-1',
+        group: 'default',
+        isActive: false,
+        frequency: {
+          type: 'interval',
+          interval: { every: 5, unit: 'minutes' },
+        } as ScheduleFrequency,
+        platforms: ['bluesky'],
+      } as Schedule,
+    ])
+    getNextTriggerTimes.mockReturnValue([new Date(now - 1 * 60 * 1000)]) // Next run was 1 minute ago
+
+    await postIfNeeded()
+    expect(publishNextPost).not.toHaveBeenCalled()
+  })
+
+  it('should not post if schedule start time is in the future', async () => {
+    const now = Date.now()
+    getSchedules.mockResolvedValue([
+      {
+        id: 'schedule-1',
+        group: 'default',
+        isActive: true,
+        startTime: new Date(now + 10 * 60 * 1000).toISOString(), // starts in 10 minutes
+        frequency: {
+          type: 'interval',
+          interval: { every: 5, unit: 'minutes' },
+        } as ScheduleFrequency,
+        platforms: ['bluesky'],
+      } as Schedule,
+    ])
+    getNextTriggerTimes.mockReturnValue([new Date(now - 1 * 60 * 1000)]) // Next run was 1 minute ago
+
+    await postIfNeeded()
+    expect(publishNextPost).not.toHaveBeenCalled()
+  })
+
+  it('should not post if schedule end time has passed', async () => {
+    const now = Date.now()
+    getSchedules.mockResolvedValue([
+      {
+        id: 'schedule-1',
+        group: 'default',
+        isActive: true,
+        endTime: new Date(now - 10 * 60 * 1000).toISOString(), // ended 10 minutes ago
+        frequency: {
+          type: 'interval',
+          interval: { every: 5, unit: 'minutes' },
+        } as ScheduleFrequency,
+        platforms: ['bluesky'],
+      } as Schedule,
+    ])
+    getNextTriggerTimes.mockReturnValue([new Date(now - 1 * 60 * 1000)]) // Next run was 1 minute ago
+
+    await postIfNeeded()
+    expect(publishNextPost).not.toHaveBeenCalled()
+  })
+})
 
 describe('CronService.pruneIfNeeded', () => {
   const mockPrunePosts = jest.fn()

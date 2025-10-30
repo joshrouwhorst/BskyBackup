@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: see code */
 export type MediaKind = 'image' | 'video'
 
 export type DraftMediaFileInput = {
@@ -40,7 +41,7 @@ export type DraftMeta = {
 }
 
 export type DraftPost = {
-  dir: string // full path on disk for the post
+  fullPath: string // full path on disk for the post
   group: string // group identifier for the post
   meta: DraftMeta
 }

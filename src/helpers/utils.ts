@@ -1,57 +1,62 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: Easier to set up this way */
+
 import type { PostDisplayData } from '@/components/Post'
 import { BACKUP_MEDIA_ENDPOINT } from '@/config/frontend'
-import type { DraftPost } from '@/types/drafts'
 import type { PostData } from '@/types/bsky'
+import type { DraftPost } from '@/types/drafts'
+import dayjs from 'dayjs'
+
+export function getDateTimeObject(date: Date | string): {
+  _object: Date
+  date: string
+  time: string
+  day: string
+  month: string
+  year: string
+  hours: string
+  minutes: string
+  amPm: string
+} | null {
+  if (!date) return null
+  const d = dayjs(date)
+  if (!d.isValid()) return null
+
+  return {
+    _object: d.toDate(),
+    date: d.format('YYYY-MM-DD'),
+    time: d.format('h:mm A').toLowerCase(),
+    day: d.format('dddd'),
+    month: d.format('MMMM'),
+    year: d.format('YYYY'),
+    hours: d.format('h'),
+    minutes: d.format('mm'),
+    amPm: d.format('A').toLowerCase(),
+  }
+}
 
 export function formatDate(date: Date | string): string {
-  if (typeof date === 'string') {
-    date = new Date(date)
-  }
-
-  return date.toISOString().replace('T', ' ').split('.')[0]
+  const obj = getDateTimeObject(date)
+  if (!obj) return ''
+  return `${obj.date} ${obj.time}`
 }
 
 export function formatFullDateTime(date: Date | string): string {
-  if (typeof date === 'string') {
-    date = new Date(date)
-  }
-  const days = [
-    'Sunday',
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-  ]
-  const d = typeof date === 'string' ? new Date(date) : date
-  const dayName = days[d.getDay()]
-  const dateStr = d.toISOString().split('T')[0]
-  const timeStr = d
-    .toLocaleTimeString([], {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    })
-    .toLowerCase()
-  return `${dayName} - ${dateStr} @ ${timeStr}`
+  const obj = getDateTimeObject(date)
+  if (!obj) return ''
+  return `${obj.day} - ${obj.date} @ ${obj.time}`
 }
 
-export function displayTime(date: Date | string): string {
-  if (typeof date === 'string') {
-    // Handle time-only format like '13:00'
-    if (date.includes(':') && !date.includes('T') && !date.includes(' ')) {
-      const today = new Date()
-      const [hours, minutes] = date.split(':').map(Number)
-      today.setHours(hours, minutes, 0, 0)
-      date = today
-    } else {
-      date = new Date(date)
-    }
+export function displayTime(time: Date | string): string {
+  if (typeof time === 'string') {
+    const now = new Date()
+    const obj = getDateTimeObject(now)
+    const timeObj = getDateTimeObject(`${obj?.date}T${time}Z`)
+    return timeObj ? `${timeObj.hours}:${timeObj.minutes} ${timeObj.amPm}` : ''
   }
 
-  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+  const obj = getDateTimeObject(time)
+  if (!obj) return ''
+  return `${obj.hours}:${obj.minutes} ${obj.amPm}`
 }
 
 export async function wait(ms: number): Promise<void> {
