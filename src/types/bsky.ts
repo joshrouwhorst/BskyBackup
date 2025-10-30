@@ -168,17 +168,17 @@ export interface Label {
   /**
    * label schema version (integer). Current version is always 1.
    */
-  ver: number
+  ver?: number
 
   /**
    * authority (account) which generated this label (DID format)
    */
-  src: string
+  src?: string
 
   /**
    * the content this label applies to (URI format). For a record: at:// URI. For an account: the did.
    */
-  uri: string
+  uri?: string
 
   /**
    * optional CID for a specific version of the subject uri
@@ -188,7 +188,7 @@ export interface Label {
   /**
    * the value of the label (string, <= 128 bytes)
    */
-  val: string
+  val?: string
 
   /**
    * if true, this label negates an earlier label with the same src, uri, and val
@@ -198,7 +198,7 @@ export interface Label {
   /**
    * creation timestamp (datetime format)
    */
-  cts: string
+  cts?: string
 
   /**
    * optional expiration timestamp (datetime format)
@@ -209,5 +209,5 @@ export interface Label {
    * optional cryptographic signature bytes.
    * Represented using the Data Model "bytes" encoding in JSON as an object like { $bytes: "<base64>" }.
    */
-  sig?: { $bytes: string } | string
+  sig?: Uint8Array<ArrayBufferLike> | string
 }
