@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: needed for schedule.id, only going to get called if it exists */
 
-import { displayTime, formatFullDateTime } from '@/helpers/utils'
+import { formatFullDateTime, to12HourTime } from '@/helpers/utils'
 import { useScheduleContext } from '@/providers/ScheduleProvider'
 import type { Schedule, ScheduleLookups } from '@/types/scheduler'
 import {
@@ -110,7 +110,7 @@ export default function ScheduleDetails({
                 </span>
                 <p className="text-gray-900 dark:text-gray-100">
                   {schedule.frequency.timesOfDay.length > 0
-                    ? schedule.frequency.timesOfDay.map(displayTime).join(', ')
+                    ? schedule.frequency.timesOfDay.map(to12HourTime).join(', ')
                     : 'N/A'}
                 </p>
               </div>

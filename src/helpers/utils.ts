@@ -5,8 +5,16 @@ import { BACKUP_MEDIA_ENDPOINT } from '@/config/frontend'
 import type { PostData } from '@/types/bsky'
 import type { DraftPost } from '@/types/drafts'
 import dayjs from 'dayjs'
+import timezone from 'dayjs/plugin/timezone'
+import utc from 'dayjs/plugin/utc'
 
-export function getDateTimeObject(date: Date | string): {
+dayjs.extend(utc)
+dayjs.extend(timezone)
+
+export function getDateTimeObject(
+  date: Date | string,
+  timeZone: string = 'UTC'
+): {
   _object: Date
   date: string
   time: string
@@ -16,9 +24,10 @@ export function getDateTimeObject(date: Date | string): {
   hours: string
   minutes: string
   amPm: string
+  timeZone: string
 } | null {
   if (!date) return null
-  const d = dayjs(date)
+  const d = dayjs(date).tz(timeZone)
   if (!d.isValid()) return null
 
   return {
@@ -31,32 +40,57 @@ export function getDateTimeObject(date: Date | string): {
     hours: d.format('h'),
     minutes: d.format('mm'),
     amPm: d.format('A').toLowerCase(),
+    timeZone: timeZone,
   }
 }
 
-export function formatDate(date: Date | string): string {
-  const obj = getDateTimeObject(date)
+export function formatDate(date: Date | string, timeZone?: string): string {
+  const obj = getDateTimeObject(date, timeZone)
   if (!obj) return ''
   return `${obj.date} ${obj.time}`
 }
 
-export function formatFullDateTime(date: Date | string): string {
-  const obj = getDateTimeObject(date)
+export function formatFullDateTime(
+  date: Date | string,
+  timeZone?: string
+): string {
+  const obj = getDateTimeObject(date, timeZone)
   if (!obj) return ''
-  return `${obj.day} - ${obj.date} @ ${obj.time}`
+  return `${obj.day} - ${obj.date} @ ${obj.time} (${obj.timeZone})`
 }
 
-export function displayTime(time: Date | string): string {
-  if (typeof time === 'string') {
-    const now = new Date()
-    const obj = getDateTimeObject(now)
-    const timeObj = getDateTimeObject(`${obj?.date}T${time}Z`)
-    return timeObj ? `${timeObj.hours}:${timeObj.minutes} ${timeObj.amPm}` : ''
+function extractHoursFromISOString(isoString: string): string | null {
+  const hoursRegex = /(?:T|^)(\d{1,2}):/
+  const match = isoString.match(hoursRegex)
+  return match ? match[1] : null
+}
+
+function extractMinutesFromISOString(isoString: string): string | null {
+  const minutesRegex = /(?:T|^)\d{1,2}:(\d{2})/
+  const match = isoString.match(minutesRegex)
+  return match ? match[1] : null
+}
+
+export function to12HourTime(time: string): string {
+  if (!time) return ''
+
+  console.log('Converting time:', time)
+  console.log('Type of time:', typeof time)
+
+  if (time.includes('T')) {
+    const hours = extractHoursFromISOString(time)
+    const minutes = extractMinutesFromISOString(time)
+    time = `${hours}:${minutes}`
   }
 
-  const obj = getDateTimeObject(time)
-  if (!obj) return ''
-  return `${obj.hours}:${obj.minutes} ${obj.amPm}`
+  const match = time.match(/^([01]\d|2[0-3]):([0-5]\d)$/)
+  if (!match) return ''
+  let hour = parseInt(match[1], 10)
+  const minutes = match[2]
+  const amPm = hour >= 12 ? 'pm' : 'am'
+  hour = hour % 12
+  if (hour === 0) hour = 12
+  return `${hour}:${minutes} ${amPm}`
 }
 
 export async function wait(ms: number): Promise<void> {

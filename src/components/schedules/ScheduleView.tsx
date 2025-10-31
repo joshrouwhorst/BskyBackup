@@ -1,20 +1,8 @@
-import { Schedule, ScheduleFrequency } from '@/types/scheduler'
-import { displayTime } from '@/helpers/utils'
-
-const daysOfWeek = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-]
+import { to12HourTime } from '@/helpers/utils'
+import type { Schedule, ScheduleFrequency } from '@/types/scheduler'
 
 export default function ScheduleListItem({
   schedule,
-  onEdit,
-  onDelete,
 }: {
   schedule: Schedule
   onEdit: (schedule: Schedule) => void
@@ -62,7 +50,7 @@ function FrequencyOutput({ frequency }: { frequency: ScheduleFrequency }) {
   }
 
   if (frequency.timesOfDay !== undefined && frequency.timesOfDay.length > 0) {
-    parts.push(`at ${frequency.timesOfDay.map(displayTime).join(', ')}`)
+    parts.push(`at ${frequency.timesOfDay.map(to12HourTime).join(', ')}`)
   }
 
   if (frequency.timeZone) {
